@@ -11,3 +11,13 @@ A python matplotlib script to count stripes from microscopic images.
  * Growth rate display
 
 ![ScreenShot](StripesCounter.gif)  
+
+### Help
+
+Help: h
+Contrast control: +/=
+Brightness control: b/B
+PeakUtils - Minimum distance control: z/Z
+PeakUtils - Threshold control: e/E
+Kernel size control: o/O
+Save: S
