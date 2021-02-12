@@ -14,6 +14,7 @@ A python matplotlib script to count stripes from microscopic images.
 
 ### Help
 
+```
 Help: h
 Contrast control: +/=
 Brightness control: b/B
@@ -21,3 +22,4 @@ PeakUtils - Minimum distance control: z/Z
 PeakUtils - Threshold control: e/E
 Kernel size control: o/O
 Save: S
+```
