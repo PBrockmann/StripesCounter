@@ -53,8 +53,8 @@ try:
     
     scalePixel = scaleValue / scaleLength
 except:
-    scaleValue = "?" 
-    scaleLength = "?"
+    scaleValue = 0 
+    scaleLength = 0 
     scalePixel = 1
 
 #------------------------------------------------------------------
@@ -73,7 +73,8 @@ point_alpha_default = 0.4
 point_alpha_pick = 0.1
 
 kernelSize = 3 
-minDist = 1
+peakutils_minDist = 1
+peakutils_thres = 0.5
 
 dist_profil = None
 profil = None
@@ -81,6 +82,7 @@ profil_convolved = None
 indexes = None
 
 line1 = line2 = line3 = None
+counterFilename = 1 
 
 #------------------------------------------------------------------
 fig, ax = plt.subplots(nrows=2, figsize=(8,8))
@@ -170,13 +172,14 @@ def on_click(event):
             ax[1].plot(dist_profil[kernelOffset:-kernelOffset], profil_convolved, c='b', lw=1, alpha=0.8)
 
         # https://peakutils.readthedocs.io/en/latest/reference.html
-        indexes = peakutils.indexes(profil_convolved, thres=0.25, thres_abs=False, min_dist=minDist)
+        indexes = peakutils.indexes(profil_convolved, thres=peakutils_thres, thres_abs=False, min_dist=peakutils_minDist)
         ax[1].scatter(dist_profil[indexes+kernelOffset], profil_convolved[indexes], c='b', s=10)  # add offset of the kernel/2
 
         stripesNb = len(indexes)
-        stripesDist = dist_profil[indexes[-1]]-dist_profil[indexes[0]]
+        stripesDist = dist_profil[indexes[-1]+kernelOffset]-dist_profil[indexes[0]+kernelOffset]
         line1 = "Number of stripes: %3d" %(stripesNb)
-        line2 = "Length of stripes: %.5f  (first: %.5f, last: %.5f)" %(stripesDist,  dist_profil[indexes[0]], dist_profil[indexes[-1]])
+        line2 = "Length of stripes: %.5f  (first: %.5f, last: %.5f)" \
+                     %(stripesDist,  dist_profil[indexes[0]+kernelOffset], dist_profil[indexes[-1]+kernelOffset])
         line3 = "Growth stripe rate (µm/stripe): %.5f" %(1000*stripesDist/stripesNb)
 
         ax[1].text(0.2, 0.1, line1 + '\n' + line2 + '\n' + line3, va="top", transform=fig.transFigure)
@@ -188,7 +191,8 @@ def on_press(event):
     global adjusted, image_object
     global alphaLevel, betaLevel
     global currently_dragging
-    global kernelSize, minDist
+    global kernelSize, peakutils_minDist, peakutils_thres
+    global counterFilename
 
     currently_dragging = True
 
@@ -222,43 +226,76 @@ def on_press(event):
         adjusted = cv2.convertScaleAbs(gray, alpha=alphaLevel, beta=betaLevel)
         image_object.set_data(adjusted)
         plt.draw()
-    elif event.key == 'a':
+    elif event.key == 'o':
         kernelSize += 2 
         print("---------------------------")
         print("Kernel size: ", kernelSize)
-    elif event.key == 'A':
+    elif event.key == 'O':
         kernelSize -= 2 
         kernelSize = max(1, kernelSize) 
         print("---------------------------")
         print("Kernel size: ", kernelSize)
     elif event.key == 'z':
-        minDist += 1 
+        peakutils_minDist += 1 
         print("---------------------------")
-        print("Minimum distance: ", minDist)
+        print("PeakUtils - Minimum distance: ", peakutils_minDist)
     elif event.key == 'Z':
-        minDist -= 1 
-        minDist = max(1, minDist) 
+        peakutils_minDist -= 1 
+        peakutils_minDist = max(1, peakutils_minDist) 
         print("---------------------------")
-        print("Minimum distance: ", minDist)
+        print("PeakUtils - Minimum distance: ", peakutils_minDist)
+    elif event.key == 'e':
+        peakutils_thres += 0.1 
+        peakutils_thres = min(0.9, peakutils_thres) 
+        print("---------------------------")
+        print("PeakUtils - Threshold: %.1f" %(peakutils_thres))
+    elif event.key == 'E':
+        peakutils_thres -= 0.1
+        peakutils_thres = max(0.1, peakutils_thres) 
+        print("PeakUtils - Threshold: %.1f" %(peakutils_thres))
     elif event.key == 'h':
         print("---------------------------")
+        print("Help: h")
         print("Contrast control: +/=")
         print("Brightness control: b/B")
-        print("Minimum distance control: z/Z")
-        print("Kernel size control: a/A")
-        print("--------")
-        print("File: ", imageFileName)
-        print("Detected scale value: ", scaleValue)
-        print("Detected scale length in pixel: %d" %(scaleLength))
-        print("Point1: [%d, %d]" %(point1[0], point1[1]))
-        print("Point2: [%d, %d]" %(point2[0], point2[1]))
-        print(line1 + '\n' + line2 + '\n' + line3)
-        for i in enumerate(dist_profil):
-        	#print("%d,%.5f,%.5f,%.5f" %(n+1,dist_profil[i], profil[i], profil_convolved[i]))
-        	print(i,dist_profil[i])
-        #print("n,xpos,ypos1,ypos2")
-        #for n,i in enumerate(indexes):
-        #	print("%d,%.5f,%.5f,%.5f" %(n+1,dist_profil[i], profil[i], profil_convolved[i]))
+        print("PeakUtils - Minimum distance control: z/Z")
+        print("PeakUtils - Threshold control: e/E")
+        print("Kernel size control: o/O")
+        print("Save: S")
+    elif event.key == 'S':
+        base=os.path.basename(imageFileName)
+        file1Name = os.path.splitext(base)[0] + "_StripesCounter_{}.csv"
+        while os.path.isfile(file1Name.format("%02d" %counterFilename)):
+            counterFilename += 1
+        file1Name = file1Name.format("%02d" %counterFilename)
+        file1 = open(file1Name, "w")
+        file1.write("#================================================\n")
+        file1.write("# StripesCounter " + version + "\n")
+        file1.write("# File: %s\n" %(imageFileName))
+        file1.write("# Detected scale value: %d\n" %(scaleValue))
+        file1.write("# Detected scale length in pixel: %d\n" %(scaleLength))
+        file1.write("# Point1: [%d, %d]\n" %(point1[0], point1[1]))
+        file1.write("# Point2: [%d, %d]\n" %(point2[0], point2[1]))
+        file1.write("# " + line1 + '\n# ' + line2 + '\n# ' + line3 + '\n')
+        file1.write("#================================================\n")
+        kernelOffset = int(kernelSize/2)
+        file1.write("n,xpos,ypos1,ypos2,peak\n")
+        for i,v in enumerate(dist_profil):
+                if i-kernelOffset >= 0  and i-kernelOffset < len(profil_convolved): 
+                        if i-kernelOffset in indexes:
+                        	file1.write("%d,%.5f,%.5f,%.5f,%d\n" %(i+1,dist_profil[i], profil[i], profil_convolved[i-kernelOffset],1))
+                        else:
+                        	file1.write("%d,%.5f,%.5f,%.5f,%d\n" %(i+1,dist_profil[i], profil[i], profil_convolved[i-kernelOffset],0))
+
+                else:
+                        file1.write("%d,%.5f,%.5f,%.5f,%d\n" %(i+1,dist_profil[i], profil[i], -999, 0))
+        file1.close()
+        print("Saved csv file:" + file1Name)
+        file1NamePng = os.path.splitext(file1Name)[0] + ".png"
+        plt.savefig(file1NamePng)
+        print("---------------------------")
+        print("Saved csv file: " + file1Name)
+        print("Saved pnf file: " + file1NamePng)
     on_click(None)
 
 #------------------------------------------------------------------

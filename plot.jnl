@@ -1,0 +1,14 @@
+! Read and plot csv file from StripesCounter
+! pyferret -script plot.jnl BEL17-2-2_1.66x_milieu0001_02.csv
+
+FILE/FORMAT=delim/skip=12/var="n,xpos,ypos1,ypos2,peak" ($01)
+
+set variable/bad=-999 n
+set variable/bad=-999 xpos
+set variable/bad=-999 ypos1
+set variable/bad=-999 ypos2
+set variable/bad=-999 peak
+
+plot/vs/line=2 xpos, ypos1
+plot/vs/line=4/o/nolab xpos, ypos2 
+plot/vs/o/symb=28/color=4/nolab xpos, peak*ypos2
