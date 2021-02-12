@@ -1,5 +1,5 @@
 ! Read and plot csv file from StripesCounter
-! pyferret -script plot.jnl BEL17-2-2_1.66x_milieu0001_02.csv
+! pyferret -script plot.jnl BEL17-2-2_1.66x_milieu0001_StripesCounter_01.csv
 
 FILE/FORMAT=delim/skip=12/var="n,xpos,ypos1,ypos2,peak" ($01)
 
