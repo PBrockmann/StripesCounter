@@ -12,7 +12,7 @@ A python matplotlib script to count stripes from microscopic images.
 
 ![ScreenShot](StripesCounter.gif)  
 
-### Help
+### Keybord shortcuts
 
 ```
 Help: h
