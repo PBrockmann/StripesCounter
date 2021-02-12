@@ -3,6 +3,8 @@
 A python matplotlib script to count stripes from microscopic images.
 
  * Automatic detection of the scale length and scale value
+ * Display of the microscopic image with a grayscale color map
+ * Control of the contrast and the brightness of the image
  * Definition of a profil line from mouse double clicks
  * The profil line can be redefined, moved by picking the line or its bounds
  * Extraction of the profil
