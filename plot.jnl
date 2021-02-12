@@ -12,3 +12,5 @@ set variable/bad=-999 peak
 plot/vs/line=2 xpos, ypos1
 plot/vs/line=4/o/nolab xpos, ypos2 
 plot/vs/o/symb=28/color=4/nolab xpos, peak*ypos2
+
+frame/file="($02%verif.png%)"
