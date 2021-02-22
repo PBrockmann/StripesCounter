@@ -116,13 +116,13 @@ def on_click(event):
     if event and event.dblclick:
         if point1_object == None:
             point1 = [event.xdata, event.ydata]
-            point1_object = patches.Circle(point1, radius=50, fc='r', 
+            point1_object = patches.Circle(point1, radius=50, fc='r', fill=False, color='r',
                 alpha=point_alpha_default, transform=ax[0].transData, label="point1")
             ax[0].add_patch(point1_object)
             point1_object.set_picker(5)
         elif point2_object == None:
             point2 = [event.xdata, event.ydata]
-            point2_object = patches.Circle(point2, radius=50, fc='r', 
+            point2_object = patches.Circle(point2, radius=50, fc='r', fill=False, color='r', 
                 alpha=point_alpha_default, transform=ax[0].transData, label="point2")
             ax[0].add_patch(point2_object)
             point2_object.set_picker(5)
@@ -130,8 +130,8 @@ def on_click(event):
 
     if point1_object != None and point2_object != None:
 
-        point1_object.set_visible(False)
-        point2_object.set_visible(False)
+        #point1_object.set_visible(False)
+        #point2_object.set_visible(False)
 
         if line_object != None:
             line_object[0].remove()

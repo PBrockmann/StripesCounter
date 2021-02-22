@@ -77,9 +77,9 @@ fig, ax = plt.subplots()
 ax.set_aspect('equal')
 ax.imshow(gray, cmap='gray')
 
-point1_object = patches.Circle(point1, radius=50, fc='r', 
+point1_object = patches.Circle(point1, radius=50, color='r', fill=False, 
         alpha=point_alpha_default, transform=ax.transData, label="point1")
-point2_object = patches.Circle(point2, radius=50, fc='r', 
+point2_object = patches.Circle(point2, radius=50, color='r', fill=False,
         alpha=point_alpha_default, transform=ax.transData, label="point2")
 
 ax.add_patch(point1_object)
