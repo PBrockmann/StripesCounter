@@ -19,6 +19,8 @@ import peakutils
 
 import cv2
 
+import text_line # for annotation on lines
+
 #------------------------------------------------------------------
 imageFileName = sys.argv[1]
 #print("#-----------------------------------")
@@ -193,6 +195,7 @@ def on_press(event):
     global currently_dragging
     global kernelSize, peakutils_minDist, peakutils_thres
     global counterFilename
+    global point1, point2
 
     currently_dragging = True
 
@@ -296,6 +299,22 @@ def on_press(event):
         print("---------------------------")
         print("Saved csv file: " + file1Name)
         print("Saved pnf file: " + file1NamePng)
+        
+        # draw the line to keep a record of what has been saved so far.
+        ax[0].annotate("", xy=(point1[0], point1[1]), 
+                       xytext=(point2[0], point2[1]), 
+                       arrowprops=dict(arrowstyle="<->", color="blue"), 
+                       alpha=0.5)
+        text_line.CurvedText(
+            x = [point1[0], point2[0]],
+            y =  [point1[1], point2[1]],
+            text="File {}".format("%02d" %counterFilename),#'this this is a very, very long text',
+            va='bottom',
+            axes = ax[0], ##calls ax.add_artist in __init__
+            alpha=0.5,
+            color="blue"
+        )
+        plt.draw()
     on_click(None)
 
 #------------------------------------------------------------------
