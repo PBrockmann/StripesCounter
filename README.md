@@ -20,8 +20,8 @@ Sequence of use :
  * Enhance the image from brightness and contrast sliders
  * Double click to create a 1st point
  * Double click to create a 2nd point
- * A red line is drawn between the 2 previously defined points  
+ * A red line is drawn between the 2 previously defined points drawn as circles 
  * A profil along the line is drawn
  * Number of peaks (stripes) are counted from the smoothed profil
- * Move, modify the profil line if needed
- * Define new scale and scale value if needed
+ * Move, modify the profil line if needed by pick the line or the circles
+ * Define new scale and enter new scale value if needed from buttons
