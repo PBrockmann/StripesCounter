@@ -485,7 +485,7 @@ class MainWindow(QMainWindow):
 
     #------------------------------------------------------------------
     def defineScaleValue(self):
-        value, okPressed = QInputDialog.getInt(self, "Get scale value","Value:", int(self.scaleValue), 0, 100, 1)
+        value, okPressed = QInputDialog.getDouble(self, "Get scale value","Value:", self.scaleValue, 0, 100, 1)
         if okPressed:
             self.scaleValue = value
         if self.scaleValue != 0 :
