@@ -351,13 +351,13 @@ class MainWindow(QMainWindow):
         if event and event.dblclick:
             if self.point1_object == None:
                 self.point1 = [event.xdata, event.ydata]
-                self.point1_object = patches.Circle(self.point1, radius=50, fc='r', fill=False, color='r',
+                self.point1_object = patches.Circle(self.point1, radius=50, fc='r', lw=2, fill=False, color='r',
                     alpha=self.point_alpha_default, transform=self.ax[0].transData, label="point1")
                 self.ax[0].add_patch(self.point1_object)
                 self.point1_object.set_picker(5)
             elif self.point2_object == None:
                 self.point2 = [event.xdata, event.ydata]
-                self.point2_object = patches.Circle(self.point2, radius=50, fc='r', fill=False, color='r',
+                self.point2_object = patches.Circle(self.point2, radius=50, fc='r', lw=2, fill=False, color='r',
                     alpha=self.point_alpha_default, transform=self.ax[0].transData, label="point2")
                 self.ax[0].add_patch(self.point2_object)
                 self.point2_object.set_picker(5)
