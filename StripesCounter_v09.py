@@ -457,12 +457,12 @@ class MainWindow(QMainWindow):
 
             if self.scaleLength > 0:
                 self.scale_object = self.ax[0].plot([point1Scale[0], point2Scale[0]], [point1Scale[1], point2Scale[1]],
-                    alpha=1.0, c='darkviolet', lw=2)
+                    alpha=1.0, c='purple', lw=2)
         except:
             self.scaleLength = 0
 
         self.scaleValue_object = self.ax[0].text(point1Scale[0], point1Scale[1], "   " + str(self.scaleValue) + " mm",
-                alpha=1.0, c='darkviolet', horizontalalignment='left', verticalalignment='bottom', clip_on=True)
+                alpha=1.0, c='purple', horizontalalignment='left', verticalalignment='bottom', clip_on=True)
         try:
 
             import pytesseract
@@ -480,7 +480,7 @@ class MainWindow(QMainWindow):
 
     #------------------------------------------------------------------
     def defineScaleValue(self):
-        value, okPressed = QInputDialog.getInt(self, "Get scale value","Value:", self.scaleValue, 0, 100, 1)
+        value, okPressed = QInputDialog.getInt(self, "Get scale value","Value:", int(self.scaleValue), 0, 100, 1)
         if okPressed:
             self.scaleValue = value
         if self.scaleValue != 0 :
