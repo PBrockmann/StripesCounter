@@ -466,17 +466,16 @@ class MainWindow(QMainWindow):
         except:
             self.scaleLength = 0
 
-        self.scaleValue_object = self.ax[0].text(point1Scale[0], point1Scale[1], "   " + str(self.scaleValue) + " mm",
+        self.scaleValue_object = self.ax[0].text(point1Scale[0], point1Scale[1], "   %.2f mm" %(self.scaleValue),
                 alpha=1.0, c='purple', horizontalalignment='left', verticalalignment='bottom', clip_on=True)
         try:
 
             import pytesseract
 
-            scaleDetected = pytesseract.image_to_string(self.mask)
-            matchObj = re.match(r'[^0-9]*([0-9]*)mm', scaleDetected.strip())
+
             self.scaleValue = float(matchObj.group(1))
             #print("Detected scale value: ", self.scaleValue)
-            self.scaleValue_object.set_text("   " + str(self.scaleValue) + " mm")
+            self.scaleValue_object.set_text("  %.2f mm" %(self.scaleValue))
 
             self.scalePixel = self.scaleValue / self.scaleLength
         except:
@@ -485,18 +484,33 @@ class MainWindow(QMainWindow):
 
     #------------------------------------------------------------------
     def defineScaleValue(self):
-        value, okPressed = QInputDialog.getDouble(self, "Get scale value","Value:", self.scaleValue, 0, 100, 1)
+        #value, okPressed = QInputDialog.getDouble(self, "Get scale value","Value:", self.scaleValue, 0, 100, 1)
+        # --> get comma instead of dot
+        dialog = QInputDialog()
+        dialog.setInputMode(QInputDialog.DoubleInput)
+        dialog.setLocale(QLocale(QLocale.English, QLocale.UnitedStates))
+        dialog.setLabelText("Value : ")
+        dialog.setDoubleMinimum(0)
+        dialog.setDoubleMaximum(100)
+        dialog.setDoubleStep(1)
+        dialog.setDoubleDecimals(2)
+        dialog.setDoubleValue(self.scaleValue)
+        dialog.setWindowTitle("Get scale value")
+        okPressed = dialog.exec_()
         if okPressed:
-            self.scaleValue = value
+            self.scaleValue = dialog.doubleValue()
+        else:
+            return
+
         if self.scaleValue != 0. :
             self.scalePixel = self.scaleValue / self.scaleLength
         else:
             self.scalePixel = 1
         self.ax[0].set_title(os.path.basename(self.imageFileName) + '\n'
             + "          Scale length [pixels]: %s" %(self.scaleLength) + '\n'
-            + "          Scale value [mm]: %s" %(self.scaleValue),
+            + "          Scale value [mm]: %.2f" %(self.scaleValue),
             loc='left', fontsize=10)
-        self.scaleValue_object.set_text("   " + str(self.scaleValue) + " mm")
+        self.scaleValue_object.set_text("   %.2f mm" %(self.scaleValue))
         self.drawProfil()
 
     #------------------------------------------------------------------
@@ -510,10 +524,10 @@ class MainWindow(QMainWindow):
             self.scalePixel = 1
         self.ax[0].set_title(os.path.basename(self.imageFileName) + '\n' 
             + "          Scale length [pixels]: %s" %(self.scaleLength) + '\n'
-            + "          Scale value [mm]: %s" %(self.scaleValue),
+            + "          Scale value [mm]: %.2f" %(self.scaleValue),
             loc='left', fontsize=10)
         self.scale_object[0].set_data([self.point1Scale[0], self.point2Scale[0]],[self.point1Scale[1], self.point2Scale[1]])
-        self.scaleValue_object.set_text("   " + str(self.scaleValue) + " mm")
+        self.scaleValue_object.set_text("   %.2f mm" %(self.scaleValue))
         self.scaleValue_object.set_position((self.point1Scale[0], self.point1Scale[1]))
         self.canvas.draw()
 
@@ -536,7 +550,7 @@ class MainWindow(QMainWindow):
 
         self.ax[0].set_title(os.path.basename(self.imageFileName) + '\n'
             + "          Scale length [pixels]: %s" %(self.scaleLength) + '\n'
-            + "          Scale value [mm]: %s" %(self.scaleValue),
+            + "          Scale value [mm]: %.2f" %(self.scaleValue),
             loc='left', fontsize=10)
 
         self.labelAlpha.setEnabled(True)
