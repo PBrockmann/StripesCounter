@@ -1,6 +1,6 @@
 # StripesCounter
 
-A python matplotlib script to count stripes from microscopic images.
+A PyQt Matplotlib python application to count stripes from microscopic images
 
  * Automatic detection of the scale length and scale value
  * Display of the microscopic image with a grayscale color map
@@ -12,16 +12,18 @@ A python matplotlib script to count stripes from microscopic images.
  * Detection of the number of the peaks (number of stripes)
  * Growth rate display
 
-![ScreenShot](StripesCounter.gif)  
+![ScreenShot](StripesCounter_v09.gif)  
 
-### Keybord shortcuts
+Sequence of use :
 
-```
-Help: h
-Contrast control: +/=
-Brightness control: b/B
-PeakUtils - Minimum distance control: z/Z
-PeakUtils - Threshold control: e/E
-Kernel size control: o/O
-Save: S
-```
+ * Open an image with a scale and value scale
+ * Enhance the image from brightness and contrast sliders
+ * Double click to create a 1st point
+ * Double click to create a 2nd point
+ * A red line is drawn between the 2 previously defined points  
+ * A profil along the line is drawn
+ * Number of peaks (stripes) are counted from the smoothed profil
+ * Move, modify the profil line if needed
+ * Define new scale and scale value if needed
+
+
