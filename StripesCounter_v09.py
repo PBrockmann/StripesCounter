@@ -28,7 +28,7 @@ import cv2
 
 import text_line
 
-version = "0.90"
+version = "v09"
 
 maximumWidth = 250
 
@@ -47,7 +47,7 @@ class MainWindow(QMainWindow):
 
         #-------------------------------
         self.setMinimumSize(QSize(1100, 800))    
-        self.setWindowTitle("Stripes Counter " + version) 
+        self.setWindowTitle("StripesCounter " + version) 
 
         # Create new action
         openAction = QAction(QIcon('open.png'), '&Open', self)        
@@ -248,6 +248,10 @@ class MainWindow(QMainWindow):
         self.buttonDefineScaleValue.setEnabled(False)
         self.buttonSave.setEnabled(False)
 
+        self.mySliderKernelSize.setValue(self.kernelSize)
+        self.mySliderPeakUtils_minDist.setValue(self.peakutils_minDist)
+        self.mySliderPeakUtils_thres.setValue(int(self.peakutils_thres*10))
+
         self.ax[0].set_visible(False)
         self.ax[1].set_visible(False)
 
@@ -257,8 +261,7 @@ class MainWindow(QMainWindow):
         self.labelAlpha.setText("Contrast level : " + str(self.alphaLevel))
         self.adjusted = cv2.convertScaleAbs(self.gray, alpha=self.alphaLevel, beta=self.betaLevel)
         self.image_object.set_data(self.adjusted)
-        if self.profil is not None:
-            self.drawProfil()
+        self.drawProfil()
         self.canvas.draw()
 
     #------------------------------------------------------------------
@@ -267,8 +270,7 @@ class MainWindow(QMainWindow):
         self.labelBeta.setText("Brighness level : " + str(self.betaLevel))
         self.adjusted = cv2.convertScaleAbs(self.gray, alpha=self.alphaLevel, beta=self.betaLevel)
         self.image_object.set_data(self.adjusted)
-        if self.profil is not None:
-            self.drawProfil()
+        self.drawProfil()
         self.canvas.draw()
 
     #------------------------------------------------------------------
@@ -380,6 +382,9 @@ class MainWindow(QMainWindow):
 
     #------------------------------------------------------------------
     def drawProfil(self):
+        if self.line_object is None:
+            return 
+
         self.profil = profile_line(self.adjusted, 
                 (self.point1[1], self.point1[0]), (self.point2[1], self.point2[0]),   # (Y1, X1), (Y2, X2) 
                 order=0, mode='constant', cval=0)
@@ -598,7 +603,8 @@ class MainWindow(QMainWindow):
         options |= QFileDialog.DontUseNativeDialog
         self.imageFileName, _ = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", 
                 "","PNG Files (*.png);;JPG Files (*.jpg);;All Files (*)", options=options)
-        self.displayImage()
+        if self.imageFileName:
+            self.displayImage()
 
     #------------------------------------------------------------------
     def exitCall(self):

@@ -25,5 +25,3 @@ Sequence of use :
  * Number of peaks (stripes) are counted from the smoothed profil
  * Move, modify the profil line if needed
  * Define new scale and scale value if needed
-
-
