@@ -210,7 +210,7 @@ class MainWindow(QMainWindow):
         self.scale_object = None
         self.scaleValue_object = None
 
-        self.scaleValue = 0
+        self.scaleValue = 0.
         self.scaleLength = 0
 
         self.point1 = [0,0]
@@ -480,7 +480,7 @@ class MainWindow(QMainWindow):
 
             self.scalePixel = self.scaleValue / self.scaleLength
         except:
-            self.scaleValue = 0
+            self.scaleValue = 0.
             self.scalePixel = 1
 
     #------------------------------------------------------------------
@@ -488,7 +488,7 @@ class MainWindow(QMainWindow):
         value, okPressed = QInputDialog.getDouble(self, "Get scale value","Value:", self.scaleValue, 0, 100, 1)
         if okPressed:
             self.scaleValue = value
-        if self.scaleValue != 0 :
+        if self.scaleValue != 0. :
             self.scalePixel = self.scaleValue / self.scaleLength
         else:
             self.scalePixel = 1
@@ -504,7 +504,7 @@ class MainWindow(QMainWindow):
         self.point1Scale = self.point1
         self.point2Scale = self.point2
         self.scaleLength = int(np.linalg.norm(np.array(self.point1Scale) - np.array(self.point2Scale)))
-        if self.scaleValue != 0:
+        if self.scaleValue != 0. :
             self.scalePixel = self.scaleValue / self.scaleLength
         else:
             self.scalePixel = 1
