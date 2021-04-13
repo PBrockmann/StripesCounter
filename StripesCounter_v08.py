@@ -5,8 +5,8 @@
 #=================================================================
 
 #------------------------------------------------------------------
-version = "v07"
-date = "2021/02/11"
+version = "v08"
+date = "2021/04/12"
 
 #------------------------------------------------------------------
 import sys, re, os
@@ -33,30 +33,32 @@ gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 mask = cv2.inRange(gray, 0, 0)
 
 #------------------------------------------------------------------
+scaleValue = 0 
+scaleLength = 0 
 try:
     import pytesseract
 
-    scaleDetected = pytesseract.image_to_string(mask)
-    matchObj = re.match(r'[^0-9]*([0-9]*)mm', scaleDetected.strip())
-    scaleValue = float(matchObj.group(1))
-    #print("Detected scale value: ", scaleValue)
-    
     fld = cv2.ximgproc.createFastLineDetector()
     lines = fld.detect(mask)
     scaleLength = 0
     for line in lines:
-        point1 = np.array((line[0][0],line[0][1]))
-        point2 = np.array((line[0][2],line[0][3]))
-        length = np.linalg.norm(point1 - point2)
-        #print(point1, point2, dist)
+        pt1 = np.array((line[0][0],line[0][1]))
+        pt2 = np.array((line[0][2],line[0][3]))
+        length = np.linalg.norm(pt1 - pt2)
+        #print(pt1, pt2, dist)
         if (length > scaleLength):
-            scaleLength = int(length) 
+            scaleLength = int(length)
+            point1Scale = pt1
+            point2Scale = pt2
     #print("Detected scale length in pixel: ", scaleLength)
     
+    scaleDetected = pytesseract.image_to_string(mask)
+    matchObj = re.match(r'[^0-9]*([0-9]*)mm', scaleDetected.strip())
+    scaleValue = float(matchObj.group(1))
+    #print("Detected scale value: ", scaleValue)
+
     scalePixel = scaleValue / scaleLength
 except:
-    scaleValue = 0 
-    scaleLength = 0 
     scalePixel = 1
 
 #------------------------------------------------------------------
@@ -64,6 +66,8 @@ image_object = None
 point1_object = None
 point2_object = None
 line_object = None
+scale_object = None
+scaleValue_object = None
 
 point1 = [0,0]
 point2 = [0,0]
@@ -108,6 +112,11 @@ ax[0].set_title(os.path.basename(imageFileName) + '\n'
 ax[0].set_aspect('equal')
 ax[0].autoscale(False)
 
+scale_object = ax[0].plot([point1Scale[0], point2Scale[0]], [point1Scale[1], point2Scale[1]], 
+    alpha=0.8, c='darkviolet', lw=2)
+scaleValue_object = ax[0].text(point1Scale[0], point1Scale[1], "   " + str(scaleValue) + " mm",
+    alpha=0.8, c='darkviolet', horizontalalignment='left', verticalalignment='bottom', clip_on=True)
+
 #------------------------------------------------------------------
 def on_click(event):
     global point1_object, point2_object, line_object
@@ -128,6 +137,8 @@ def on_click(event):
                 alpha=point_alpha_default, transform=ax[0].transData, label="point2")
             ax[0].add_patch(point2_object)
             point2_object.set_picker(5)
+            line_object = ax[0].plot([point1[0], point2[0]], [point1[1], point2[1]], 
+                alpha=0.5, c='r', lw=2, picker=True)
         plt.draw()
 
     if point1_object != None and point2_object != None:
@@ -188,6 +199,9 @@ def on_press(event):
     global kernelSize, peakutils_minDist, peakutils_thres
     global counterFilename
     global point1, point2
+    global point1Scale, point2Scale
+    global scaleValue, scalePixel, scaleLength
+    global scale_object, scaleValue_object
 
     currently_dragging = True
 
@@ -230,6 +244,34 @@ def on_press(event):
         kernelSize = max(1, kernelSize) 
         print("---------------------------")
         print("Kernel size: ", kernelSize)
+    elif event.key == 'd':
+        scaleValue = float(input("---> Define scale value: "))
+        if scaleValue != 0:
+            scalePixel = scaleValue / scaleLength
+        else:
+            scalePixel = 1
+        ax[0].set_title(os.path.basename(imageFileName) + '\n' 
+            + "          Scale length [pixels]: %s" %(scaleLength) + '\n'
+            + "          Scale value [mm]: %s" %(scaleValue),
+            loc='left', fontsize=10)
+        scaleValue_object.set_text("   " + str(scaleValue) + " mm")
+        plt.draw()
+    elif event.key == 't':
+        point1Scale = point1
+        point2Scale = point2
+        scaleLength = int(np.linalg.norm(np.array(point1Scale) - np.array(point2Scale)))
+        if scaleValue != 0:
+            scalePixel = scaleValue / scaleLength
+        else:
+            scalePixel = 1
+        ax[0].set_title(os.path.basename(imageFileName) + '\n' 
+            + "          Scale length [pixels]: %s" %(scaleLength) + '\n'
+            + "          Scale value [mm]: %s" %(scaleValue),
+            loc='left', fontsize=10)
+        scale_object[0].set_data([point1Scale[0], point2Scale[0]],[point1Scale[1], point2Scale[1]])
+        scaleValue_object.set_text("   " + str(scaleValue) + " mm")
+        scaleValue_object.set_position((point1Scale[0], point1Scale[1]))
+        plt.draw()
     elif event.key == 'z':
         peakutils_minDist += 1 
         print("---------------------------")
@@ -256,6 +298,8 @@ def on_press(event):
         print("PeakUtils - Minimum distance control: z/Z")
         print("PeakUtils - Threshold control: e/E")
         print("Kernel size control: o/O")
+        print("Define scale: t")
+        print("Define scale value: d")
         print("Save: S")
     elif event.key == 'S':
         base=os.path.basename(imageFileName)
@@ -294,10 +338,8 @@ def on_press(event):
         print("Saved png file: " + file1NamePNG)
         
         # draw the line to keep a record of what has been saved so far.
-        ax[0].annotate("", xy=(point1[0], point1[1]), 
-                       xytext=(point2[0], point2[1]), 
-                       arrowprops=dict(arrowstyle="<->", color="blue"), 
-                       alpha=0.5)
+        ax[0].plot([point1[0], point2[0]], [point1[1], point2[1]], 
+                alpha=0.5, c='blue', lw=2)
         text_line.CurvedText(
             x=[point1[0], point2[0]],
             y=[point1[1], point2[1]],
@@ -372,5 +414,3 @@ fig.canvas.mpl_connect('key_release_event', on_release)
 plt.get_current_fig_manager().toolbar.pan()
 #plt.get_current_fig_manager().toolbar.zoom()
 plt.show()
-
-
