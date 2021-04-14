@@ -25,3 +25,11 @@ Sequence of use :
  * Number of peaks (stripes) are counted from the smoothed profil
  * Move, modify the profil line if needed by pick the line or the circles
  * Define new scale and enter new scale value if needed from buttons
+
+## Release notes
+
+ * v09.1
+   Fix for scale value recognition
+
+ * v09
+   First release with a PyQt interface
