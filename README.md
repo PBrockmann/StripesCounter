@@ -40,11 +40,11 @@ v09
 
 Tested with python 3.8.5, matplotlib 3.4.1, pyqt 5.12.3
 
-### Contrast and brighness reference 
+## Contrast and brighness reference 
 
 https://docs.opencv.org/4.5.2/d3/dc1/tutorial_basic_linear_transform.html
 
-### PeakUtils reference
+## PeakUtils reference
 
 https://peakutils.readthedocs.io/en/latest/reference.html#module-peakutils.peak
 
