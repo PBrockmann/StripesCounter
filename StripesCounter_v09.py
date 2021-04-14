@@ -28,7 +28,7 @@ import cv2
 
 import text_line
 
-version = "v09.1"
+version = "v09.2"
 
 maximumWidth = 250
 
@@ -463,13 +463,13 @@ class MainWindow(QMainWindow):
             if self.scaleLength > 0:
                 self.scale_object = self.ax[0].plot([point1Scale[0], point2Scale[0]], [point1Scale[1], point2Scale[1]],
                     alpha=1.0, c='purple', lw=2)
+        
+            self.scaleValue_object = self.ax[0].text(point1Scale[0], point1Scale[1], "   %.2f mm" %(self.scaleValue),
+                alpha=1.0, c='purple', horizontalalignment='left', verticalalignment='bottom', clip_on=True)
         except:
             self.scaleLength = 0
 
-        self.scaleValue_object = self.ax[0].text(point1Scale[0], point1Scale[1], "   %.2f mm" %(self.scaleValue),
-                alpha=1.0, c='purple', horizontalalignment='left', verticalalignment='bottom', clip_on=True)
         try:
-
             import pytesseract
 
             scaleDetected = pytesseract.image_to_string(self.mask)
