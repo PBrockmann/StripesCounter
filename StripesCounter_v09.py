@@ -472,7 +472,8 @@ class MainWindow(QMainWindow):
 
             import pytesseract
 
-
+            scaleDetected = pytesseract.image_to_string(self.mask)
+            matchObj = re.match(r'[^0-9]*([0-9]*)mm', scaleDetected.strip())
             self.scaleValue = float(matchObj.group(1))
             #print("Detected scale value: ", self.scaleValue)
             self.scaleValue_object.set_text("  %.2f mm" %(self.scaleValue))
