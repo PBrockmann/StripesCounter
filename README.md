@@ -39,3 +39,15 @@ v09
 `$ git clone https://github.com/PBrockmann/StripesCounter`
 
 Tested with python 3.8.5, matplotlib 3.4.1, pyqt 5.12.3
+
+### Contrast and brighness reference 
+
+https://docs.opencv.org/4.5.2/d3/dc1/tutorial_basic_linear_transform.html
+
+### PeakUtils reference
+
+https://peakutils.readthedocs.io/en/latest/reference.html#module-peakutils.peak
+
+ * thres (float between [0., 1.]) – Normalized threshold. Only the peaks with amplitude higher than the threshold will be detected.
+
+ * min_dist (int) – Minimum distance between each detected peak. The peak with the highest amplitude is preferred to satisfy this constraint.
