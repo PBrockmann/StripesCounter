@@ -33,3 +33,9 @@ v09.1
 
 v09
  * First release with a PyQt interface
+
+## Installation
+
+`$ git clone https://github.com/PBrockmann/StripesCounter`
+
+Tested with python 3.8.5, matplotlib 3.4.1, pyqt 5.12.3
