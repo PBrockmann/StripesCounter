@@ -385,59 +385,67 @@ class MainWindow(QMainWindow):
         if self.line_object is None:
             return 
 
-        self.profil = profile_line(self.adjusted, 
-                (self.point1[1], self.point1[0]), (self.point2[1], self.point2[0]),   # (Y1, X1), (Y2, X2) 
-                order=0, mode='constant', cval=0)
-        
-        self.ax[1].set_visible(True)
-        self.ax[1].clear()
-        
-        self.dist_profil = np.linspace(0, self.scalePixel*len(self.profil), num=len(self.profil))
-        self.ax[1].plot(self.dist_profil, self.profil, c='r', lw=1, alpha=0.8)
-        
-        kernel = np.ones(self.kernelSize) / self.kernelSize
-        kernelOffset = int(self.kernelSize/2)
-        
-        # mode='same' gives artefact at start and end 
-        #self.profil_convolved = np.convolve(self.profil, self.kernel, mode='same')
-        #self.ax[1].plot(self.dist_profil, self.profil_convolved, c='c', lw=1, alpha=0.8)
-        
-        # use mode='valid' but need to take into account with absysse values (dist_profil[int(kernelSize/2):-int(kernelSize/2)])
-        self.profil_convolved = np.convolve(self.profil, kernel, mode='valid')
-        if self.kernelSize == 1 :
-            self.ax[1].plot(self.dist_profil, self.profil_convolved, c='b', lw=1, alpha=0.8)
-        else:
-            self.ax[1].plot(self.dist_profil[kernelOffset:-kernelOffset], self.profil_convolved, c='b', lw=1, alpha=0.8)
-        
-        # https://peakutils.readthedocs.io/en/latest/reference.html
-        self.indexes = peakutils.indexes(self.profil_convolved, thres=self.peakutils_thres, 
-                        thres_abs=False, min_dist=self.peakutils_minDist)
-        self.ax[1].scatter(self.dist_profil[self.indexes+kernelOffset], 
-                            self.profil_convolved[self.indexes], c='b', s=10)  # add offset of the kernel/2
-        
-        stripesNb = len(self.indexes)
-        stripesDist = self.dist_profil[self.indexes[-1]+kernelOffset]-self.dist_profil[self.indexes[0]+kernelOffset]
-        self.line1 = "Number of stripes: %3d" %(stripesNb)
-        self.line2 = "Length of stripes: %.5f  (first: %.5f, last: %.5f)" \
-                     %(stripesDist, self.dist_profil[self.indexes[0]+kernelOffset], 
-                                    self.dist_profil[self.indexes[-1]+kernelOffset])
-        self.line3 = "Growth stripe rate (µm/stripe): %.5f" %(1000*stripesDist/stripesNb)
-        
-        self.ax[1].text(0.2, 0.1, self.line1 + '\n' + self.line2 + '\n' + self.line3, va="top", transform=self.fig.transFigure)
-        
-        self.ax[1].grid(linestyle='dotted')
+        try:
+            self.profil = profile_line(self.adjusted, 
+                    (self.point1[1], self.point1[0]), (self.point2[1], self.point2[0]),   # (Y1, X1), (Y2, X2) 
+                    order=0, mode='constant', cval=0)
+            
+            self.ax[1].set_visible(True)
+            self.ax[1].clear()
+            
+            self.dist_profil = np.linspace(0, self.scalePixel*len(self.profil), num=len(self.profil))
+            self.ax[1].plot(self.dist_profil, self.profil, c='r', lw=1, alpha=0.8)
+            
+            kernel = np.ones(self.kernelSize) / self.kernelSize
+            kernelOffset = int(self.kernelSize/2)
+            
+            # mode='same' gives artefact at start and end 
+            #self.profil_convolved = np.convolve(self.profil, self.kernel, mode='same')
+            #self.ax[1].plot(self.dist_profil, self.profil_convolved, c='c', lw=1, alpha=0.8)
+            
+            # use mode='valid' but need to take into account with absysse values 
+            #   (dist_profil[int(kernelSize/2):-int(kernelSize/2)])
+            self.profil_convolved = np.convolve(self.profil, kernel, mode='valid')
+            if self.kernelSize == 1 :
+                self.ax[1].plot(self.dist_profil, self.profil_convolved, c='b', lw=1, alpha=0.8)
+            else:
+                self.ax[1].plot(self.dist_profil[kernelOffset:-kernelOffset], 
+                                self.profil_convolved, c='b', lw=1, alpha=0.8)
+            
+            # https://peakutils.readthedocs.io/en/latest/reference.html
+            self.indexes = peakutils.indexes(self.profil_convolved, thres=self.peakutils_thres, 
+                            thres_abs=False, min_dist=self.peakutils_minDist)
+            self.ax[1].scatter(self.dist_profil[self.indexes+kernelOffset], 
+                                self.profil_convolved[self.indexes], c='b', s=10)  # add offset of the kernel/2
+            
+            stripesNb = len(self.indexes)
+            stripesDist = self.dist_profil[self.indexes[-1]+kernelOffset]-self.dist_profil[self.indexes[0]+kernelOffset]
+            self.line1 = "Number of stripes: %3d" %(stripesNb)
+            self.line2 = "Length of stripes: %.5f  (first: %.5f, last: %.5f)" \
+                         %(stripesDist, self.dist_profil[self.indexes[0]+kernelOffset], 
+                                        self.dist_profil[self.indexes[-1]+kernelOffset])
+            self.line3 = "Growth stripe rate (µm/stripe): %.5f" %(1000*stripesDist/stripesNb)
+            
+            self.ax[1].text(0.2, 0.1, self.line1 + '\n' + self.line2 + '\n' + self.line3, 
+                    va="top", transform=self.fig.transFigure)
+            
+            self.ax[1].grid(linestyle='dotted')
 
-        self.labelKernelSize.setEnabled(True)
-        self.mySliderKernelSize.setEnabled(True)
-        self.labelPeakUtils_minDist.setEnabled(True)
-        self.mySliderPeakUtils_minDist.setEnabled(True)
-        self.labelPeakUtils_thres.setEnabled(True)
-        self.mySliderPeakUtils_thres.setEnabled(True)
-        self.buttonDefineScaleValue.setEnabled(True)
-        self.buttonDefineScale.setEnabled(True)
-        self.buttonSave.setEnabled(True)
+            self.labelKernelSize.setEnabled(True)
+            self.mySliderKernelSize.setEnabled(True)
+            self.labelPeakUtils_minDist.setEnabled(True)
+            self.mySliderPeakUtils_minDist.setEnabled(True)
+            self.labelPeakUtils_thres.setEnabled(True)
+            self.mySliderPeakUtils_thres.setEnabled(True)
+            self.buttonDefineScaleValue.setEnabled(True)
+            self.buttonDefineScale.setEnabled(True)
+            self.buttonSave.setEnabled(True)
 
-        self.canvas.draw()
+            self.canvas.draw()
+
+        except:
+            #print("Error in drawProfile")
+            return 
 
     #------------------------------------------------------------------
     def openCall(self):

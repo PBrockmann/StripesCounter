@@ -30,6 +30,7 @@ Sequence of use :
 
 v09.2
  * Fix for undefined variables in detectScale.
+ * drawProfil in a try-except block to prevent errors
 
 v09.1
  * Fix for scale value recognition
