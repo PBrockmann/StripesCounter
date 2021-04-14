@@ -28,8 +28,8 @@ Sequence of use :
 
 ## Release notes
 
- * v09.1
-   - Fix for scale value recognition
+v09.1
+ * Fix for scale value recognition
 
- * v09
-   - First release with a PyQt interface
+v09
+ * First release with a PyQt interface
