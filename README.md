@@ -28,6 +28,9 @@ Sequence of use :
 
 ## Release notes
 
+v09.2
+ * Fix for undefined variables in detectScale.
+
 v09.1
  * Fix for scale value recognition
 
