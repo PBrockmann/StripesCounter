@@ -28,7 +28,7 @@ import cv2
 
 import text_line
 
-version = "v09"
+version = "v09.1"
 
 maximumWidth = 250
 
