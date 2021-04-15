@@ -481,7 +481,7 @@ class MainWindow(QMainWindow):
             self.scaleLength = 0
 
         try:
-            # Set a default scaleValue_object
+            # Set a default scaleValue_object at 200,200
             self.scaleValue_object = self.ax[0].text(200, 200, "   %.2f mm" %(self.scaleValue),
                 alpha=1.0, c='purple', horizontalalignment='left', verticalalignment='bottom', clip_on=True)
 
