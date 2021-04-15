@@ -28,7 +28,7 @@ import cv2
 
 import text_line
 
-version = "v09.2"
+version = "v09.3"
 
 maximumWidth = 250
 
@@ -368,7 +368,7 @@ class MainWindow(QMainWindow):
 
     #------------------------------------------------------------------
     def drawLine(self):
-        if self.point1_object != None and self.point2_object != None:
+        if self.point1_object != None and self.point2_object != None and self.line_object != None:
             self.line_object[0].set_data([self.point1[0], self.point2[0]],[self.point1[1], self.point2[1]])
             self.canvas.draw()
             self.line_object[0].set_pickradius(5)
@@ -454,7 +454,7 @@ class MainWindow(QMainWindow):
     #------------------------------------------------------------------
     def detectScale(self):
         try:
-            fld = cv2.ximgproc.createFastLineDetector()
+            fl = cv2.ximgproc.createFastLineDetector()
             lines = fld.detect(self.mask)
             self.scaleLength = 0
             for line in lines:
@@ -464,20 +464,23 @@ class MainWindow(QMainWindow):
                 #print(pt1, pt2, dist)
                 if (length > self.scaleLength):
                     self.scaleLength = int(length)
-                    point1Scale = pt1
-                    point2Scale = pt2
+                    self.point1Scale = pt1
+                    self.point2Scale = pt2
             #print("Detected scale length in pixel: ", scaleLength)
 
             if self.scaleLength > 0:
-                self.scale_object = self.ax[0].plot([point1Scale[0], point2Scale[0]], [point1Scale[1], point2Scale[1]],
-                    alpha=1.0, c='purple', lw=2)
+                self.scale_object = self.ax[0].plot([self.point1Scale[0], self.point2Scale[0]], 
+                                                    [self.point1Scale[1], self.point2Scale[1]],
+                                                    alpha=1.0, c='purple', lw=2)
         
-            self.scaleValue_object = self.ax[0].text(point1Scale[0], point1Scale[1], "   %.2f mm" %(self.scaleValue),
-                alpha=1.0, c='purple', horizontalalignment='left', verticalalignment='bottom', clip_on=True)
         except:
             self.scaleLength = 0
 
         try:
+            # Set a default scaleValue_object
+            self.scaleValue_object = self.ax[0].text(200, 200, "   %.2f mm" %(self.scaleValue),
+                alpha=1.0, c='purple', horizontalalignment='left', verticalalignment='bottom', clip_on=True)
+
             import pytesseract
 
             scaleDetected = pytesseract.image_to_string(self.mask)
@@ -511,7 +514,7 @@ class MainWindow(QMainWindow):
         else:
             return
 
-        if self.scaleValue != 0. :
+        if self.scaleValue != 0. and self.scaleLength != 0:
             self.scalePixel = self.scaleValue / self.scaleLength
         else:
             self.scalePixel = 1
@@ -527,7 +530,7 @@ class MainWindow(QMainWindow):
         self.point1Scale = self.point1
         self.point2Scale = self.point2
         self.scaleLength = int(np.linalg.norm(np.array(self.point1Scale) - np.array(self.point2Scale)))
-        if self.scaleValue != 0. :
+        if self.scaleValue != 0. and self.scaleLength != 0:
             self.scalePixel = self.scaleValue / self.scaleLength
         else:
             self.scalePixel = 1
@@ -535,10 +538,15 @@ class MainWindow(QMainWindow):
             + "          Scale length [pixels]: %s" %(self.scaleLength) + '\n'
             + "          Scale value [mm]: %.2f" %(self.scaleValue),
             loc='left', fontsize=10)
-        self.scale_object[0].set_data([self.point1Scale[0], self.point2Scale[0]],[self.point1Scale[1], self.point2Scale[1]])
-        self.scaleValue_object.set_text("   %.2f mm" %(self.scaleValue))
+        if self.scale_object == None:
+            self.scale_object = self.ax[0].plot([self.point1Scale[0], self.point2Scale[0]], 
+                                                [self.point1Scale[1], self.point2Scale[1]],
+                                                alpha=1.0, c='purple', lw=2)
+        else:
+            self.scale_object[0].set_data([self.point1Scale[0], self.point2Scale[0]],
+                                          [self.point1Scale[1], self.point2Scale[1]])
         self.scaleValue_object.set_position((self.point1Scale[0], self.point1Scale[1]))
-        self.canvas.draw()
+        self.drawProfil()
 
     #------------------------------------------------------------------
     def displayImage(self):

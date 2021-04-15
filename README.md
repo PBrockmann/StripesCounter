@@ -28,8 +28,11 @@ Sequence of use :
 
 ## Release notes
 
+v09.3
+ * Enforce checking errors with scaleValue and scale objects
+
 v09.2
- * Fix for undefined variables in detectScale.
+ * Fix for undefined variables in detectScale
  * drawProfil in a try-except block to prevent errors
 
 v09.1
