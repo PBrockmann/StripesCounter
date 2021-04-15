@@ -386,6 +386,11 @@ class MainWindow(QMainWindow):
             return 
 
         try:
+            if self.scaleValue != 0. and self.scaleLength != 0:
+                self.scalePixel = self.scaleValue / self.scaleLength
+            else:
+                self.scalePixel = 1
+
             self.profil = profile_line(self.adjusted, 
                     (self.point1[1], self.point1[0]), (self.point2[1], self.point2[0]),   # (Y1, X1), (Y2, X2) 
                     order=0, mode='constant', cval=0)
@@ -472,7 +477,6 @@ class MainWindow(QMainWindow):
                 self.scale_object = self.ax[0].plot([self.point1Scale[0], self.point2Scale[0]], 
                                                     [self.point1Scale[1], self.point2Scale[1]],
                                                     alpha=1.0, c='purple', lw=2)
-        
         except:
             self.scaleLength = 0
 
@@ -489,10 +493,8 @@ class MainWindow(QMainWindow):
             #print("Detected scale value: ", self.scaleValue)
             self.scaleValue_object.set_text("  %.2f mm" %(self.scaleValue))
 
-            self.scalePixel = self.scaleValue / self.scaleLength
         except:
             self.scaleValue = 0.
-            self.scalePixel = 1
 
     #------------------------------------------------------------------
     def defineScaleValue(self):
@@ -514,10 +516,6 @@ class MainWindow(QMainWindow):
         else:
             return
 
-        if self.scaleValue != 0. and self.scaleLength != 0:
-            self.scalePixel = self.scaleValue / self.scaleLength
-        else:
-            self.scalePixel = 1
         self.ax[0].set_title(os.path.basename(self.imageFileName) + '\n'
             + "          Scale length [pixels]: %s" %(self.scaleLength) + '\n'
             + "          Scale value [mm]: %.2f" %(self.scaleValue),
@@ -530,10 +528,6 @@ class MainWindow(QMainWindow):
         self.point1Scale = self.point1
         self.point2Scale = self.point2
         self.scaleLength = int(np.linalg.norm(np.array(self.point1Scale) - np.array(self.point2Scale)))
-        if self.scaleValue != 0. and self.scaleLength != 0:
-            self.scalePixel = self.scaleValue / self.scaleLength
-        else:
-            self.scalePixel = 1
         self.ax[0].set_title(os.path.basename(self.imageFileName) + '\n' 
             + "          Scale length [pixels]: %s" %(self.scaleLength) + '\n'
             + "          Scale value [mm]: %.2f" %(self.scaleValue),
