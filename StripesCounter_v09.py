@@ -454,7 +454,7 @@ class MainWindow(QMainWindow):
     #------------------------------------------------------------------
     def detectScale(self):
         try:
-            fl = cv2.ximgproc.createFastLineDetector()
+            fld = cv2.ximgproc.createFastLineDetector()
             lines = fld.detect(self.mask)
             self.scaleLength = 0
             for line in lines:
