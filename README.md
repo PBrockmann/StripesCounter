@@ -30,13 +30,17 @@ Sequence of use :
 
 v09.4
  * Simplify events handling made now on the canvas
+
 v09.3
  * Enforce checking errors with scaleValue and scale objects
+
 v09.2
  * Fix for undefined variables in detectScale
  * drawProfil in a try-except block to prevent errors
+
 v09.1
  * Fix for scale value recognition
+
 v09.0
  * First release with a PyQt interface
 
