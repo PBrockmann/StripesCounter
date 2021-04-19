@@ -28,7 +28,7 @@ import cv2
 
 import text_line
 
-version = "v09.3"
+version = "v9.4"
 
 maximumWidth = 250
 
@@ -144,6 +144,10 @@ class MainWindow(QMainWindow):
         self.canvas.setFocus()
 
         self.canvas.mpl_connect('button_press_event', self.on_click)
+        self.canvas.mpl_connect('button_press_event', self.on_press)
+        self.canvas.mpl_connect('button_release_event', self.on_release)
+        self.canvas.mpl_connect('pick_event', self.on_pick)
+        self.canvas.mpl_connect('motion_notify_event', self.on_motion)
 
         #-----------------------
         # Create toolbar, passing canvas as first parament, parent (self, the MainWindow) as second.
@@ -363,7 +367,7 @@ class MainWindow(QMainWindow):
                 self.point2_object.set_picker(5)
                 self.line_object = self.ax[0].plot([self.point1[0], self.point2[0]], [self.point1[1], self.point2[1]], 
                     alpha=0.5, c='r', lw=2, picker=True)
-            self.canvas.draw()
+                self.line_object[0].set_pickradius(5)
         self.drawLine()
 
     #------------------------------------------------------------------
@@ -371,13 +375,6 @@ class MainWindow(QMainWindow):
         if self.point1_object != None and self.point2_object != None and self.line_object != None:
             self.line_object[0].set_data([self.point1[0], self.point2[0]],[self.point1[1], self.point2[1]])
             self.canvas.draw()
-            self.line_object[0].set_pickradius(5)
-            for canvas in set(artist.figure.canvas for artist in 
-                            [self.point1_object, self.point2_object, self.line_object[0]]):
-                canvas.mpl_connect('button_press_event', self.on_press)
-                canvas.mpl_connect('button_release_event', self.on_release)
-                canvas.mpl_connect('pick_event', self.on_pick)
-                canvas.mpl_connect('motion_notify_event', self.on_motion)
             self.drawProfil()
 
     #------------------------------------------------------------------

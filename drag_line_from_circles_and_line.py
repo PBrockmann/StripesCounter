@@ -77,26 +77,24 @@ fig, ax = plt.subplots()
 ax.set_aspect('equal')
 ax.imshow(gray, cmap='gray')
 
-point1_object = patches.Circle(point1, radius=50, color='r', fill=False, 
+point1_object = patches.Circle(point1, radius=50, color='r', fill=False, lw=2,
         alpha=point_alpha_default, transform=ax.transData, label="point1")
-point2_object = patches.Circle(point2, radius=50, color='r', fill=False,
+point1_object.set_picker(5)
+point2_object = patches.Circle(point2, radius=50, color='r', fill=False, lw=2,
         alpha=point_alpha_default, transform=ax.transData, label="point2")
+point2_object.set_picker(5)
 
 ax.add_patch(point1_object)
 ax.add_patch(point2_object)
 
 line_object = ax.plot([point1[0], point2[0]], [point1[1], point2[1]], 
             alpha=0.8, c='r', lw=2, picker=True)
-
-point1_object.set_picker(5)
-point2_object.set_picker(5)
 line_object[0].set_pickradius(5)
 
-for canvas in set(artist.figure.canvas for artist in [point1_object, point2_object, line_object[0]]):
-    canvas.mpl_connect('button_press_event', on_press)
-    canvas.mpl_connect('button_release_event', on_release)
-    canvas.mpl_connect('pick_event', on_pick)
-    canvas.mpl_connect('motion_notify_event', on_motion)
+fig.canvas.mpl_connect('button_press_event', on_press)
+fig.canvas.mpl_connect('button_release_event', on_release)
+fig.canvas.mpl_connect('pick_event', on_pick)
+fig.canvas.mpl_connect('motion_notify_event', on_motion)
 
 plt.show()
 
