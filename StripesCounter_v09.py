@@ -466,13 +466,13 @@ class MainWindow(QMainWindow):
                 #print(pt1, pt2, dist)
                 if (length > self.scaleLength):
                     self.scaleLength = int(length)
-                    self.point1Scale = pt1
-                    self.point2Scale = pt2
+                    point1Scale = pt1
+                    point2Scale = pt2
             #print("Detected scale length in pixel: ", scaleLength)
 
             if self.scaleLength > 0:
-                self.scale_object = self.ax[0].plot([self.point1Scale[0], self.point2Scale[0]], 
-                                                    [self.point1Scale[1], self.point2Scale[1]],
+                self.scale_object = self.ax[0].plot([point1Scale[0], point2Scale[0]],
+                                                    [point1Scale[1], point2Scale[1]],
                                                     alpha=1.0, c='purple', lw=2)
         except:
             self.scaleLength = 0
@@ -522,21 +522,21 @@ class MainWindow(QMainWindow):
 
     #------------------------------------------------------------------
     def defineScale(self):
-        self.point1Scale = self.point1
-        self.point2Scale = self.point2
-        self.scaleLength = int(np.linalg.norm(np.array(self.point1Scale) - np.array(self.point2Scale)))
+        point1Scale = self.point1
+        point2Scale = self.point2
+        self.scaleLength = int(np.linalg.norm(np.array(point1Scale) - np.array(point2Scale)))
         self.ax[0].set_title(os.path.basename(self.imageFileName) + '\n' 
             + "          Scale length [pixels]: %s" %(self.scaleLength) + '\n'
             + "          Scale value [mm]: %.2f" %(self.scaleValue),
             loc='left', fontsize=10)
         if self.scale_object == None:
-            self.scale_object = self.ax[0].plot([self.point1Scale[0], self.point2Scale[0]], 
-                                                [self.point1Scale[1], self.point2Scale[1]],
+            self.scale_object = self.ax[0].plot([point1Scale[0], point2Scale[0]], 
+                                                [point1Scale[1], point2Scale[1]],
                                                 alpha=1.0, c='purple', lw=2)
         else:
-            self.scale_object[0].set_data([self.point1Scale[0], self.point2Scale[0]],
-                                          [self.point1Scale[1], self.point2Scale[1]])
-        self.scaleValue_object.set_position((self.point1Scale[0], self.point1Scale[1]))
+            self.scale_object[0].set_data([point1Scale[0], point2Scale[0]],
+                                          [point1Scale[1], point2Scale[1]])
+        self.scaleValue_object.set_position((point1Scale[0], point1Scale[1]))
         self.drawProfil()
 
     #------------------------------------------------------------------
