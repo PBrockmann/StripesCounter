@@ -24,8 +24,8 @@ Usage :
  * At the 2nd point, the profil to be extracted is drawn as a red line
  * The profil of the image is drawn corresponding to the profil line 
  * Add segments to the profil line by double clicking on it
-  * left double clicking to add a control point
-  * right double clicking to remove a control point 
+   * left double clicking to add a control point
+   * right double clicking to remove a control point 
  * Number of peaks (stripes) are counted from the smoothed profil
  * Adapt various parameters for peak dectection and smoothing
  * Move, modify the profil line and control points if needed
