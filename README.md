@@ -12,21 +12,34 @@ A PyQt Matplotlib python application to count stripes from microscopic images
  * Detection of the number of the peaks (number of stripes)
  * Growth rate display
 
-![ScreenShot](StripesCounter_v09.gif)  
+![ScreenShot](StripesCounter_v10.gif)  
 
-Sequence of use :
+Usage :
 
- * Open an image with a scale and value scale
+ * Open an image, optionnaly with a scale and value scale annotation
+ * Pan the image from a mouse click
+ * Zoom in or out with wheel zoom (or 2 fingers pad actions)
  * Enhance the image from brightness and contrast sliders
- * Double click to create a 1st point
- * Double click to create a 2nd point
- * A red line is drawn between the 2 previously defined points drawn as circles 
- * A profil along the line is drawn
+ * Create a profil line by double clicking
+ * At the 2nd point, the profil to be extracted is drawn as a red line
+ * The profil of the image is drawn corresponding to the profil line 
+ * Add segments to the profil line by double clicking on it
+  * left double clicking to add a control point
+  * right double clicking to remove a control point 
  * Number of peaks (stripes) are counted from the smoothed profil
- * Move, modify the profil line if needed by pick the line or the circles
- * Define new scale and enter new scale value if needed from buttons
+ * Adapt various parameters for peak dectection and smoothing
+ * Move, modify the profil line and control points if needed
+ * Define new scale and scale value if needed
+ * Save the image and the data points, visualize the extracted profil
 
 ## Release notes
+
+v10.1
+ * Zoom and drag with mouse
+ * Removed matplotlib Toolbar
+
+v10.0
+ * Profil from segmented line 
 
 v09.4
  * Simplify events handling made now on the canvas

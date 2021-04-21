@@ -598,10 +598,18 @@ class MainWindow(QMainWindow):
             self.scaleLength = 0
 
         try:
-            # Set a default scaleValue_object at 200,200
-            self.scaleValue_object = self.ax[0].text(200, 200, "   %.2f mm" %(self.scaleValue),
+            self.scaleValue_object = self.ax[0].text(
+                min(point1Scale[0], point2Scale[0]),
+                min(point1Scale[1], point2Scale[1]),
+                "   %.2f mm" %(self.scaleValue),
+                alpha=1.0, c='purple', horizontalalignment='left', verticalalignment='bottom', clip_on=True)
+        except:
+            self.scaleValue_object = self.ax[0].text(
+                200, 200,                               # Set a default scaleValue_object at 200,200
+                "   %.2f mm" %(self.scaleValue),
                 alpha=1.0, c='purple', horizontalalignment='left', verticalalignment='bottom', clip_on=True)
 
+        try:
             import pytesseract
 
             scaleDetected = pytesseract.image_to_string(self.mask)
