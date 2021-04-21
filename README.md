@@ -61,7 +61,14 @@ v09.0
 
 `$ git clone https://github.com/PBrockmann/StripesCounter`
 
-Tested with python 3.8.5, matplotlib 3.4.1, pyqt 5.12.3
+Tested with 
+ * python=3.8.5
+ * pyqt=5.12.3
+ * matplotlib=3.4.1
+ * opencv=4.5.1
+ * peakutils=1.3.3
+ * scikit-image=0.17.2
+ * shapely=1.7.1 
 
 ## Contrast and brighness reference 
 
