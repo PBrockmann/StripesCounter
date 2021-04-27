@@ -420,6 +420,7 @@ class MainWindow(QMainWindow):
     #------------------------------------------------------------------
     def on_motion(self, event):
         if not self.press: return
+        if event.xdata == None or event.ydata == None: return
 
         if self.current_artist != None:
             dx, dy = self.offset
