@@ -10,6 +10,7 @@ A PyQt Matplotlib python application to count stripes from microscopic images
  * Extraction of the profil
  * Smoothing (convolution) from a variable length kernel
  * Detection of the number of the peaks (number of stripes)
+ * Display of detected peaks on image
  * Growth rate display
 
 ![ScreenShot](StripesCounter_v10.gif)  
