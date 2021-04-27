@@ -39,7 +39,7 @@ except:
     sys.exit()
 
 #======================================================
-version = "v10.1"
+version = "v10.2"
 maximumWidth = 250
 
 #======================================================
@@ -138,6 +138,10 @@ class MainWindow(QMainWindow):
         self.mySliderPeakUtils_thres.setTickPosition(QSlider.TicksBelow)
         self.mySliderPeakUtils_thres.valueChanged[int].connect(self.changeValuePeakUtils_thres)
 
+        self.cboxPeaks = QCheckBox("Display peaks on image")
+        self.cboxPeaks.setChecked(False)
+        self.cboxPeaks.toggled.connect(self.toggled_cboxPeaks)
+
         #-----------------------
         self.fig, self.ax = plt.subplots(nrows=2, figsize=(8,8), gridspec_kw={
                            'height_ratios': [2, 1]})
@@ -194,6 +198,7 @@ class MainWindow(QMainWindow):
         layoutV2.addSpacing(1)
         layoutV2.addWidget(self.labelPeakUtils_thres)
         layoutV2.addWidget(self.mySliderPeakUtils_thres)
+        layoutV2.addWidget(self.cboxPeaks)
         layoutV2.addSpacing(5)
         layoutV2.addWidget(self.buttonDefineScaleValue)
         layoutV2.addWidget(self.buttonDefineScale)
@@ -241,6 +246,7 @@ class MainWindow(QMainWindow):
         self.profil = None
         self.profil_convolved = None
         self.indexes = None
+        self.peaks = None
 
         self.line1 = self.line2 = self.line3 = None
         self.counterFilename = 1
@@ -256,7 +262,9 @@ class MainWindow(QMainWindow):
         self.labelPeakUtils_thres.setEnabled(False)
         self.mySliderPeakUtils_thres.setEnabled(False)
         self.labelPeakUtils_minDist.setEnabled(False)
+        self.cboxPeaks.setEnabled(False)
         self.mySliderPeakUtils_minDist.setEnabled(False)
+        self.cboxPeaks.setChecked(False)
         self.buttonDefineScale.setEnabled(False)
         self.buttonDefineScaleValue.setEnabled(False)
         self.buttonSave.setEnabled(False)
@@ -303,6 +311,10 @@ class MainWindow(QMainWindow):
     def changeValuePeakUtils_thres(self, value):
         self.peakutils_thres = value/10.
         self.labelPeakUtils_thres.setText("PeakUtils - Threshold : " + str(self.peakutils_thres))
+        self.drawProfil()
+
+    #------------------------------------------------------------------
+    def toggled_cboxPeaks(self):
         self.drawProfil()
 
     #------------------------------------------------------------------
@@ -498,13 +510,23 @@ class MainWindow(QMainWindow):
 
             listEndSegment = [0]
             self.profil =  np.array([]) 
+            self.profil_mx = np.array([])
+            self.profil_my = np.array([])
             self.dist_profil = np.array([])
             for i in range(0,len(xdata)-1):
                 #print("---", i, xdata[i], xdata[i+1])
                 profil_tmp = profile_line(self.adjusted, (ydata[i], xdata[i]), (ydata[i+1], xdata[i+1]),
                                             order=0, mode='constant', cval=0)
-                dist_profil_tmp = np.linspace(0, self.scalePixel*len(profil_tmp), num=len(profil_tmp))
+
+                profil_mx_tmp = profile_line(self.mx, (ydata[i], xdata[i]), (ydata[i+1], xdata[i+1]),
+                                            order=0, mode='constant', cval=0)
+                profil_my_tmp = profile_line(self.my, (ydata[i], xdata[i]), (ydata[i+1], xdata[i+1]),
+                                            order=0, mode='constant', cval=0)
+
                 self.profil = np.concatenate((self.profil, profil_tmp))
+                self.profil_mx = np.concatenate((self.profil_mx, profil_mx_tmp))
+                self.profil_my = np.concatenate((self.profil_my, profil_my_tmp))
+                dist_profil_tmp = np.linspace(0, self.scalePixel*len(profil_tmp), num=len(profil_tmp))
                 if i > 0:
                     # add last point of previous segment
                     self.dist_profil = np.concatenate((self.dist_profil, dist_profil_tmp + self.dist_profil[-1]))
@@ -539,7 +561,14 @@ class MainWindow(QMainWindow):
                             thres_abs=False, min_dist=self.peakutils_minDist)
             self.ax[1].scatter(self.dist_profil[self.indexes+kernelOffset], 
                                 self.profil_convolved[self.indexes], c='b', s=10)  # add offset of the kernel/2
-            
+
+            if self.peaks != None:
+                self.peaks.remove()
+                self.peaks = None
+            if self.cboxPeaks.isChecked():
+                self.peaks = self.ax[0].scatter(self.profil_mx[self.indexes+kernelOffset], 
+                                                self.profil_my[self.indexes+kernelOffset], c='b', s=5)
+           
             stripesNb = len(self.indexes)
             stripesDist = self.dist_profil[self.indexes[-1]+kernelOffset]-self.dist_profil[self.indexes[0]+kernelOffset]
             self.line1 = "Number of stripes: %3d" %(stripesNb)
@@ -559,6 +588,7 @@ class MainWindow(QMainWindow):
             self.mySliderPeakUtils_minDist.setEnabled(True)
             self.labelPeakUtils_thres.setEnabled(True)
             self.mySliderPeakUtils_thres.setEnabled(True)
+            self.cboxPeaks.setEnabled(True)
             self.buttonDefineScaleValue.setEnabled(True)
             self.buttonDefineScale.setEnabled(True)
             self.buttonSave.setEnabled(True)
@@ -678,6 +708,7 @@ class MainWindow(QMainWindow):
         self.ax[0].clear()
 
         img = cv2.imread(self.imageFileName)
+        (self.mx, self.my) = np.meshgrid(np.arange(img.shape[1]), np.arange(img.shape[0]))
         self.gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         self.mask = cv2.inRange(self.gray, 0, 0)
         self.alphaLevel =  self.mySliderAlpha.value()/10.

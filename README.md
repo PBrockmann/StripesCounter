@@ -34,6 +34,9 @@ Usage :
 
 ## Release notes
 
+v10.2
+ * Display detected peaks on image
+
 v10.1
  * Zoom and drag with mouse
  * Removed matplotlib Toolbar
