@@ -30,10 +30,14 @@ Usage :
  * Number of peaks (stripes) are counted from the smoothed profil
  * Adapt various parameters for peak dectection and smoothing
  * Move, modify the profil line and control points if needed
+ * Inspect detected peaks with a mouse over from image or profil
  * Define new scale and scale value if needed
  * Save the image and the data points, visualize the extracted profil
 
 ## Release notes
+
+v10.3
+ * Highlight peaks when mouse over from image or profil
 
 v10.2
  * Display detected peaks on image

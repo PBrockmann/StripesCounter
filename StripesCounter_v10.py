@@ -39,7 +39,7 @@ except:
     sys.exit()
 
 #======================================================
-version = "v10.2"
+version = "v10.3"
 maximumWidth = 250
 
 #======================================================
@@ -239,6 +239,7 @@ class MainWindow(QMainWindow):
         self.cur_ylim = 0
 
         self.kernelSize = 3 
+        self.kernelOffset = 0
         self.peakutils_minDist = 1
         self.peakutils_thres = 0.5
 
@@ -246,7 +247,10 @@ class MainWindow(QMainWindow):
         self.profil = None
         self.profil_convolved = None
         self.indexes = None
+        self.peaksCurve = None
         self.peaks = None
+        self.peakHover0 = None
+        self.peakHover1 = None
 
         self.line1 = self.line2 = self.line3 = None
         self.counterFilename = 1
@@ -419,9 +423,37 @@ class MainWindow(QMainWindow):
 
     #------------------------------------------------------------------
     def on_motion(self, event):
+        #----------------------------------------------
+        # display hover scatter points when mouse passes over a peak
+        if self.peakHover0 != None:
+            self.peakHover0.remove()
+            self.peakHover0 = None
+            self.canvas.draw()
+        if self.peakHover1 != None:
+            self.peakHover1.remove()
+            self.peakHover1 = None
+            self.canvas.draw()
+
+        cont = False
+        if event.inaxes == self.ax[0] and self.cboxPeaks.isChecked():
+            cont, ind = self.peaks.contains(event)
+        elif event.inaxes == self.ax[1]:
+            cont, ind = self.peaksCurve.contains(event)
+        if cont:
+            i = ind["ind"][0]
+            self.peakHover0 = self.ax[0].scatter(self.profil_mx[self.indexes[i]+self.kernelOffset], 
+                                                 self.profil_my[self.indexes[i]+self.kernelOffset], 
+                                                 c='yellow', s=10)
+            self.peakHover1 = self.ax[1].scatter(self.dist_profil[self.indexes[i]+self.kernelOffset], 
+                                                 self.profil_convolved[self.indexes[i]], 
+                                                 c='yellow', s=200, edgecolors='b', lw=1, alpha=0.8, zorder=0)
+            self.canvas.draw()
+
+        #----------------------------------------------
         if not self.press: return
         if event.xdata == None or event.ydata == None: return
 
+        #----------------------------------------------
         if self.current_artist != None:
             dx, dy = self.offset
             if isinstance(self.current_artist, patches.Circle):
@@ -459,7 +491,6 @@ class MainWindow(QMainWindow):
             self.ax[0].set_xlim(self.cur_xlim)
             self.ax[0].set_ylim(self.cur_ylim)
             self.canvas.draw()
-
         
     #------------------------------------------------------------------
     def on_press(self, event):
@@ -537,13 +568,14 @@ class MainWindow(QMainWindow):
 
             self.ax[1].set_visible(True)
             self.ax[1].clear()
+            self.ax[1].set_facecolor('whitesmoke')
             
             self.ax[1].plot(self.dist_profil, self.profil, c='r', lw=1, alpha=0.8)
             for x in listEndSegment:
                 self.ax[1].axvline(x=x, linestyle='dashed', color='red', alpha=0.8)
             
             kernel = np.ones(self.kernelSize) / self.kernelSize
-            kernelOffset = int(self.kernelSize/2)
+            self.kernelOffset = int(self.kernelSize/2)
             
             # mode='same' gives artefact at start and end 
             #self.profil_convolved = np.convolve(self.profil, self.kernel, mode='same')
@@ -555,27 +587,27 @@ class MainWindow(QMainWindow):
             if self.kernelSize == 1 :
                 self.ax[1].plot(self.dist_profil, self.profil_convolved, c='b', lw=1, alpha=0.8)
             else:
-                self.ax[1].plot(self.dist_profil[kernelOffset:-kernelOffset], self.profil_convolved, c='b', lw=1, alpha=0.8)
+                self.ax[1].plot(self.dist_profil[self.kernelOffset:-self.kernelOffset], self.profil_convolved, c='b', lw=1, alpha=0.8)
             
             # https://peakutils.readthedocs.io/en/latest/reference.html
             self.indexes = peakutils.indexes(self.profil_convolved, thres=self.peakutils_thres, 
                             thres_abs=False, min_dist=self.peakutils_minDist)
-            self.ax[1].scatter(self.dist_profil[self.indexes+kernelOffset], 
-                                self.profil_convolved[self.indexes], c='b', s=10)  # add offset of the kernel/2
+            self.peaksCurve = self.ax[1].scatter(self.dist_profil[self.indexes+self.kernelOffset], 
+                            self.profil_convolved[self.indexes], c='b', s=10)  # add offset of the kernel/2
 
             if self.peaks != None:
                 self.peaks.remove()
                 self.peaks = None
             if self.cboxPeaks.isChecked():
-                self.peaks = self.ax[0].scatter(self.profil_mx[self.indexes+kernelOffset], 
-                                                self.profil_my[self.indexes+kernelOffset], c='b', s=5)
+                self.peaks = self.ax[0].scatter(self.profil_mx[self.indexes+self.kernelOffset], 
+                                                self.profil_my[self.indexes+self.kernelOffset], c='b', s=5)
            
             stripesNb = len(self.indexes)
-            stripesDist = self.dist_profil[self.indexes[-1]+kernelOffset]-self.dist_profil[self.indexes[0]+kernelOffset]
+            stripesDist = self.dist_profil[self.indexes[-1]+self.kernelOffset]-self.dist_profil[self.indexes[0]+self.kernelOffset]
             self.line1 = "Number of stripes: %3d" %(stripesNb)
             self.line2 = "Length of stripes: %.5f  (first: %.5f, last: %.5f)" \
-                         %(stripesDist, self.dist_profil[self.indexes[0]+kernelOffset], 
-                                        self.dist_profil[self.indexes[-1]+kernelOffset])
+                         %(stripesDist, self.dist_profil[self.indexes[0]+self.kernelOffset], 
+                                        self.dist_profil[self.indexes[-1]+self.kernelOffset])
             self.line3 = "Growth stripe rate (µm/stripe): %.5f" %(1000*stripesDist/stripesNb)
             
             self.ax[1].text(0.2, 0.1, self.line1 + '\n' + self.line2 + '\n' + self.line3, 
@@ -749,16 +781,15 @@ class MainWindow(QMainWindow):
             file1.write("# Point%d: [%d, %d]\n" %(i+1, xdata[i], ydata[i]))
         file1.write("# " + self.line1 + '\n# ' + self.line2 + '\n# ' + self.line3 + '\n')
         file1.write("#================================================\n")
-        kernelOffset = int(self.kernelSize/2)
         file1.write("n,xpos,ypos1,ypos2,peak\n")
         for i,v in enumerate(self.dist_profil):
-                if i-kernelOffset >= 0  and i-kernelOffset < len(self.profil_convolved): 
-                        if i-kernelOffset in self.indexes:
+                if i-self.kernelOffset >= 0  and i-self.kernelOffset < len(self.profil_convolved): 
+                        if i-self.kernelOffset in self.indexes:
                         	file1.write("%d,%.5f,%.5f,%.5f,%d\n" 
-                                        %(i+1, self.dist_profil[i], self.profil[i], self.profil_convolved[i-kernelOffset], 1))
+                                        %(i+1, self.dist_profil[i], self.profil[i], self.profil_convolved[i-self.kernelOffset], 1))
                         else:
                         	file1.write("%d,%.5f,%.5f,%.5f,%d\n" 
-                                        %(i+1, self.dist_profil[i], self.profil[i], self.profil_convolved[i-kernelOffset], 0))
+                                        %(i+1, self.dist_profil[i], self.profil[i], self.profil_convolved[i-self.kernelOffset], 0))
 
                 else:
                         file1.write("%d,%.5f,%.5f,%.5f,%d\n" %(i+1, self.dist_profil[i], self.profil[i], -999, 0))
@@ -812,6 +843,7 @@ class MainWindow(QMainWindow):
          * Number of peaks (stripes) are counted from the smoothed profil
          * Adapt various parameters for peak dectection and smoothing
          * Move, modify the profil line and control points if needed
+         * Inspect detected peaks with a mouse over from image or profil 
          * Define new scale and scale value if needed
          * Save the image and the data points, visualize the extracted profil
 
