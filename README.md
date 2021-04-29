@@ -36,6 +36,9 @@ Usage :
 
 ## Release notes
 
+v10.4
+ * Add extra informations (segment number, parameters) in csv file
+
 v10.3
  * Highlight peaks when mouse over from image or profil
 
