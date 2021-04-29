@@ -34,12 +34,12 @@ try:
     import text_line
 
 except:
-    print("Some modules have not been found :")
+    print("Some modules have not been found:")
     print("---> re, matplotlib, PyQt5, skimage, peakutils, numpy, cv2, shapely")
     sys.exit()
 
 #======================================================
-version = "v10.3"
+version = "v10.4"
 maximumWidth = 250
 
 #======================================================
@@ -81,15 +81,15 @@ class MainWindow(QMainWindow):
         fileMenu = self.menuBar.addMenu('&About')
         fileMenu.addAction(aboutAction)
 
-        self.labelAlpha = QLabel("Contrast level : 1.0")
+        self.labelAlpha = QLabel("Contrast level: 1.0")
         self.labelAlpha.setAlignment(Qt.AlignLeft)
-        self.labelBeta = QLabel("Brightness level : 0")
+        self.labelBeta = QLabel("Brightness level: 0")
         self.labelBeta.setAlignment(Qt.AlignLeft)
-        self.labelKernelSize = QLabel("Kernel size : " + str(self.kernelSize))
+        self.labelKernelSize = QLabel("Kernel size: " + str(self.kernelSize))
         self.labelKernelSize.setAlignment(Qt.AlignLeft)
-        self.labelPeakUtils_minDist = QLabel("PeakUtils - Minimum distance : " + str(self.peakutils_minDist))
+        self.labelPeakUtils_minDist = QLabel("PeakUtils - Minimum distance: " + str(self.peakutils_minDist))
         self.labelPeakUtils_minDist.setAlignment(Qt.AlignLeft)
-        self.labelPeakUtils_thres = QLabel("PeakUtils - Threshold : " + str(self.peakutils_thres))
+        self.labelPeakUtils_thres = QLabel("PeakUtils - Threshold: " + str(self.peakutils_thres))
         self.labelPeakUtils_thres.setAlignment(Qt.AlignLeft)
 
         self.mySliderAlpha = QSlider(Qt.Horizontal, self)
@@ -283,7 +283,7 @@ class MainWindow(QMainWindow):
     #------------------------------------------------------------------
     def changeValueAlpha(self, value):
         self.alphaLevel = value/10.
-        self.labelAlpha.setText("Contrast level : " + str(self.alphaLevel))
+        self.labelAlpha.setText("Contrast level: " + str(self.alphaLevel))
         self.adjusted = cv2.convertScaleAbs(self.gray, alpha=self.alphaLevel, beta=self.betaLevel)
         self.image_object.set_data(self.adjusted)
         self.drawProfil()
@@ -292,7 +292,7 @@ class MainWindow(QMainWindow):
     #------------------------------------------------------------------
     def changeValueBeta(self, value):
         self.betaLevel = value
-        self.labelBeta.setText("Brighness level : " + str(self.betaLevel))
+        self.labelBeta.setText("Brighness level: " + str(self.betaLevel))
         self.adjusted = cv2.convertScaleAbs(self.gray, alpha=self.alphaLevel, beta=self.betaLevel)
         self.image_object.set_data(self.adjusted)
         self.drawProfil()
@@ -302,19 +302,19 @@ class MainWindow(QMainWindow):
     def changeValueKernelSize(self, value):
         if value % 2 != 0:
             self.kernelSize = value
-            self.labelKernelSize.setText("Kernel size : " + str(self.kernelSize))
+            self.labelKernelSize.setText("Kernel size: " + str(self.kernelSize))
             self.drawProfil()
 
     #------------------------------------------------------------------
     def changeValuePeakUtils_minDist(self, value):
         self.peakutils_minDist = value
-        self.labelPeakUtils_minDist.setText("PeakUtils - Minimum distance : " + str(self.peakutils_minDist))
+        self.labelPeakUtils_minDist.setText("PeakUtils - Minimum distance: " + str(self.peakutils_minDist))
         self.drawProfil()
         
     #------------------------------------------------------------------
     def changeValuePeakUtils_thres(self, value):
         self.peakutils_thres = value/10.
-        self.labelPeakUtils_thres.setText("PeakUtils - Threshold : " + str(self.peakutils_thres))
+        self.labelPeakUtils_thres.setText("PeakUtils - Threshold: " + str(self.peakutils_thres))
         self.drawProfil()
 
     #------------------------------------------------------------------
@@ -544,6 +544,7 @@ class MainWindow(QMainWindow):
             self.profil =  np.array([]) 
             self.profil_mx = np.array([])
             self.profil_my = np.array([])
+            self.profil_segment = np.array([])
             self.dist_profil = np.array([])
             for i in range(0,len(xdata)-1):
                 #print("---", i, xdata[i], xdata[i+1])
@@ -558,6 +559,7 @@ class MainWindow(QMainWindow):
                 self.profil = np.concatenate((self.profil, profil_tmp))
                 self.profil_mx = np.concatenate((self.profil_mx, profil_mx_tmp))
                 self.profil_my = np.concatenate((self.profil_my, profil_my_tmp))
+                self.profil_segment = np.concatenate((self.profil_segment, profil_mx_tmp*0 + i+1))	# store segment number
                 dist_profil_tmp = np.linspace(0, self.scalePixel*len(profil_tmp), num=len(profil_tmp))
                 if i > 0:
                     # add last point of previous segment
@@ -584,7 +586,7 @@ class MainWindow(QMainWindow):
             # use mode='valid' but need to take into account with absysse values 
             #   (dist_profil[int(kernelSize/2):-int(kernelSize/2)])
             self.profil_convolved = np.convolve(self.profil, kernel, mode='valid')
-            if self.kernelSize == 1 :
+            if self.kernelSize == 1:
                 self.ax[1].plot(self.dist_profil, self.profil_convolved, c='b', lw=1, alpha=0.8)
             else:
                 self.ax[1].plot(self.dist_profil[self.kernelOffset:-self.kernelOffset], self.profil_convolved, c='b', lw=1, alpha=0.8)
@@ -691,7 +693,7 @@ class MainWindow(QMainWindow):
         dialog = QInputDialog()
         dialog.setInputMode(QInputDialog.DoubleInput)
         dialog.setLocale(QLocale(QLocale.English, QLocale.UnitedStates))
-        dialog.setLabelText("Value : ")
+        dialog.setLabelText("Value: ")
         dialog.setDoubleMinimum(0)
         dialog.setDoubleMaximum(100)
         dialog.setDoubleStep(1)
@@ -775,24 +777,33 @@ class MainWindow(QMainWindow):
         file1.write("# File: %s\n" %(self.imageFileName))
         file1.write("# Detected scale value: %d\n" %(self.scaleValue))
         file1.write("# Detected scale length in pixel: %d\n" %(self.scaleLength))
+        file1.write("# Contrast level: %.1f\n" %(self.alphaLevel))
+        file1.write("# Brightness level: %d\n" %(self.betaLevel))
+        file1.write("# Kernel size: %d\n" %(self.kernelSize))
+        file1.write("# PeakUtils - Minimum distance: %d\n" %(self.peakutils_minDist))
+        file1.write("# PeakUtils - Threshold: %.1f\n" %(self.peakutils_thres))
         xdata = list(self.line_object[0].get_xdata())
         ydata = list(self.line_object[0].get_ydata())
+        file1.write("# Number of segments: %d\n" %(len(xdata)-1))
         for i in range(0,len(xdata)):
-            file1.write("# Point%d: [%d, %d]\n" %(i+1, xdata[i], ydata[i]))
+            file1.write("#      Point%d: [%d, %d]\n" %(i+1, xdata[i], ydata[i]))
         file1.write("# " + self.line1 + '\n# ' + self.line2 + '\n# ' + self.line3 + '\n')
         file1.write("#================================================\n")
-        file1.write("n,xpos,ypos1,ypos2,peak\n")
+        file1.write("n,xpos,ypos1,ypos2,peak,segment\n")
         for i,v in enumerate(self.dist_profil):
                 if i-self.kernelOffset >= 0  and i-self.kernelOffset < len(self.profil_convolved): 
                         if i-self.kernelOffset in self.indexes:
-                        	file1.write("%d,%.5f,%.5f,%.5f,%d\n" 
-                                        %(i+1, self.dist_profil[i], self.profil[i], self.profil_convolved[i-self.kernelOffset], 1))
+                        	file1.write("%d,%.5f,%.5f,%.5f,%d,%d\n" 
+                                        %(i+1, self.dist_profil[i], self.profil[i], self.profil_convolved[i-self.kernelOffset], 
+					1, self.profil_segment[i]))
                         else:
-                        	file1.write("%d,%.5f,%.5f,%.5f,%d\n" 
-                                        %(i+1, self.dist_profil[i], self.profil[i], self.profil_convolved[i-self.kernelOffset], 0))
+                        	file1.write("%d,%.5f,%.5f,%.5f,%d,%d\n" 
+                                        %(i+1, self.dist_profil[i], self.profil[i], self.profil_convolved[i-self.kernelOffset], 
+					0, self.profil_segment[i]))
 
                 else:
-                        file1.write("%d,%.5f,%.5f,%.5f,%d\n" %(i+1, self.dist_profil[i], self.profil[i], -999, 0))
+                        file1.write("%d,%.5f,%.5f,%.5f,%d,%d\n" %(i+1, self.dist_profil[i], self.profil[i], -999, 
+								0, self.profil_segment[i]))
         file1.close()
         file1NamePNG = os.path.splitext(file1NameCSV)[0] + ".png"
         plt.savefig(file1NamePNG)
