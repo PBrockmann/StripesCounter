@@ -36,6 +36,9 @@ Usage :
 
 ## Release notes
 
+v10.5
+ * Scale value has now on 3 precision digits
+
 v10.4
  * Add extra informations (segment number, parameters) in csv file
 

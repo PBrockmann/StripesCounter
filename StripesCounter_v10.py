@@ -39,7 +39,7 @@ except:
     sys.exit()
 
 #======================================================
-version = "v10.4"
+version = "v10.5"
 maximumWidth = 250
 
 #======================================================
@@ -666,12 +666,12 @@ class MainWindow(QMainWindow):
             self.scaleValue_object = self.ax[0].text(
                 min(point1Scale[0], point2Scale[0]),
                 min(point1Scale[1], point2Scale[1]),
-                "   %.2f mm" %(self.scaleValue),
+                "   %.3f mm" %(self.scaleValue),
                 alpha=1.0, c='purple', horizontalalignment='left', verticalalignment='bottom', clip_on=True)
         except:
             self.scaleValue_object = self.ax[0].text(
                 200, 200,                               # Set a default scaleValue_object at 200,200
-                "   %.2f mm" %(self.scaleValue),
+                "   %.3f mm" %(self.scaleValue),
                 alpha=1.0, c='purple', horizontalalignment='left', verticalalignment='bottom', clip_on=True)
 
         try:
@@ -681,7 +681,7 @@ class MainWindow(QMainWindow):
             matchObj = re.match(r'[^0-9]*([0-9]*)mm', scaleDetected.strip())
             self.scaleValue = float(matchObj.group(1))
             #print("Detected scale value: ", self.scaleValue)
-            self.scaleValue_object.set_text("  %.2f mm" %(self.scaleValue))
+            self.scaleValue_object.set_text("  %.3f mm" %(self.scaleValue))
 
         except:
             self.scaleValue = 0.
@@ -697,7 +697,7 @@ class MainWindow(QMainWindow):
         dialog.setDoubleMinimum(0)
         dialog.setDoubleMaximum(100)
         dialog.setDoubleStep(1)
-        dialog.setDoubleDecimals(2)
+        dialog.setDoubleDecimals(3)
         dialog.setDoubleValue(self.scaleValue)
         dialog.setWindowTitle("Get scale value")
         okPressed = dialog.exec_()
@@ -708,9 +708,9 @@ class MainWindow(QMainWindow):
 
         self.ax[0].set_title(os.path.basename(self.imageFileName) + '\n'
             + "          Scale length [pixels]: %s" %(self.scaleLength) + '\n'
-            + "          Scale value [mm]: %.2f" %(self.scaleValue),
+            + "          Scale value [mm]: %.3f" %(self.scaleValue),
             loc='left', fontsize=10)
-        self.scaleValue_object.set_text("   %.2f mm" %(self.scaleValue))
+        self.scaleValue_object.set_text("   %.3f mm" %(self.scaleValue))
         self.drawProfil()
 
     #------------------------------------------------------------------
@@ -722,7 +722,7 @@ class MainWindow(QMainWindow):
         self.scaleLength = int(np.linalg.norm(np.array(point1Scale) - np.array(point2Scale)))
         self.ax[0].set_title(os.path.basename(self.imageFileName) + '\n' 
             + "          Scale length [pixels]: %s" %(self.scaleLength) + '\n'
-            + "          Scale value [mm]: %.2f" %(self.scaleValue),
+            + "          Scale value [mm]: %.3f" %(self.scaleValue),
             loc='left', fontsize=10)
         if self.scale_object == None:
             self.scale_object = self.ax[0].plot([point1Scale[0], point2Scale[0]], 
@@ -754,7 +754,7 @@ class MainWindow(QMainWindow):
 
         self.ax[0].set_title(os.path.basename(self.imageFileName) + '\n'
             + "          Scale length [pixels]: %s" %(self.scaleLength) + '\n'
-            + "          Scale value [mm]: %.2f" %(self.scaleValue),
+            + "          Scale value [mm]: %.3f" %(self.scaleValue),
             loc='left', fontsize=10)
 
         self.labelAlpha.setEnabled(True)
@@ -775,7 +775,7 @@ class MainWindow(QMainWindow):
         file1.write("#================================================\n")
         file1.write("# StripesCounter " + version + "\n")
         file1.write("# File: %s\n" %(self.imageFileName))
-        file1.write("# Detected scale value: %d\n" %(self.scaleValue))
+        file1.write("# Detected scale value: %.3f\n" %(self.scaleValue))
         file1.write("# Detected scale length in pixel: %d\n" %(self.scaleLength))
         file1.write("# Contrast level: %.1f\n" %(self.alphaLevel))
         file1.write("# Brightness level: %d\n" %(self.betaLevel))
