@@ -39,7 +39,7 @@ except:
     sys.exit()
 
 #======================================================
-version = "v10.5"
+version = "v10.6"
 maximumWidth = 250
 
 #======================================================
@@ -80,6 +80,10 @@ class MainWindow(QMainWindow):
         fileMenu.addAction(exitAction)
         fileMenu = self.menuBar.addMenu('&About')
         fileMenu.addAction(aboutAction)
+
+        self.cboxInverseImage = QCheckBox("Inverse image")
+        self.cboxInverseImage.setChecked(False)
+        self.cboxInverseImage.toggled.connect(self.toggled_cboxInverseImage)
 
         self.labelAlpha = QLabel("Contrast level: 1.0")
         self.labelAlpha.setAlignment(Qt.AlignLeft)
@@ -184,6 +188,8 @@ class MainWindow(QMainWindow):
 
         layoutV2 = QVBoxLayout()
         layoutV2.setAlignment(Qt.AlignTop)
+        layoutV2.addWidget(self.cboxInverseImage)
+        layoutV2.addSpacing(1)
         layoutV2.addWidget(self.labelAlpha)
         layoutV2.addWidget(self.mySliderAlpha)
         layoutV2.addSpacing(1)
@@ -257,6 +263,8 @@ class MainWindow(QMainWindow):
 
     #------------------------------------------------------------------
     def initInterface(self):
+        self.cboxInverseImage.setChecked(False)
+        self.cboxInverseImage.setEnabled(False)
         self.labelAlpha.setEnabled(False)
         self.mySliderAlpha.setEnabled(False)
         self.labelBeta.setEnabled(False)
@@ -284,6 +292,14 @@ class MainWindow(QMainWindow):
     def changeValueAlpha(self, value):
         self.alphaLevel = value/10.
         self.labelAlpha.setText("Contrast level: " + str(self.alphaLevel))
+        self.adjusted = cv2.convertScaleAbs(self.gray, alpha=self.alphaLevel, beta=self.betaLevel)
+        self.image_object.set_data(self.adjusted)
+        self.drawProfil()
+        self.canvas.draw()
+
+    #------------------------------------------------------------------
+    def toggled_cboxInverseImage(self):
+        self.gray = cv2.bitwise_not(self.gray)
         self.adjusted = cv2.convertScaleAbs(self.gray, alpha=self.alphaLevel, beta=self.betaLevel)
         self.image_object.set_data(self.adjusted)
         self.drawProfil()
@@ -757,6 +773,7 @@ class MainWindow(QMainWindow):
             + "          Scale value [mm]: %.3f" %(self.scaleValue),
             loc='left', fontsize=10)
 
+        self.cboxInverseImage.setEnabled(True)
         self.labelAlpha.setEnabled(True)
         self.mySliderAlpha.setEnabled(True)
         self.labelBeta.setEnabled(True)
@@ -777,6 +794,7 @@ class MainWindow(QMainWindow):
         file1.write("# File: %s\n" %(self.imageFileName))
         file1.write("# Detected scale value: %.3f\n" %(self.scaleValue))
         file1.write("# Detected scale length in pixel: %d\n" %(self.scaleLength))
+        file1.write("# Inverse image: %s\n" %(self.cboxInverseImage.isChecked()))
         file1.write("# Contrast level: %.1f\n" %(self.alphaLevel))
         file1.write("# Brightness level: %d\n" %(self.betaLevel))
         file1.write("# Kernel size: %d\n" %(self.kernelSize))
@@ -829,7 +847,7 @@ class MainWindow(QMainWindow):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
         self.imageFileName, _ = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", 
-                "","PNG Files (*.png);;JPG Files (*.jpg);;All Files (*)", options=options)
+                "","PNG & JPG Files (*.png *.jpg);;PNG Files (*.png);;JPG Files (*.jpg);;All Files (*)", options=options)
         if self.imageFileName:
             self.displayImage()
 

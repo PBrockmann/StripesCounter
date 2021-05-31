@@ -36,6 +36,10 @@ Usage :
 
 ## Release notes
 
+v10.6
+ * Inverse image feature
+ * Option to open both png and jpeg files
+
 v10.5
  * Scale value has now on 3 precision digits
 
