@@ -39,7 +39,7 @@ except:
     sys.exit()
 
 #======================================================
-version = "v10.6"
+version = "v10.7"
 maximumWidth = 250
 
 #======================================================
@@ -811,16 +811,16 @@ class MainWindow(QMainWindow):
         for i,v in enumerate(self.dist_profil):
                 if i-self.kernelOffset >= 0  and i-self.kernelOffset < len(self.profil_convolved): 
                         if i-self.kernelOffset in self.indexes:
-                        	file1.write("%d,%.5f,%.5f,%.5f,%d,%d\n" 
+                        	file1.write("%d,%.7f,%.7f,%.7f,%d,%d\n" 
                                         %(i+1, self.dist_profil[i], self.profil[i], self.profil_convolved[i-self.kernelOffset], 
 					1, self.profil_segment[i]))
                         else:
-                        	file1.write("%d,%.5f,%.5f,%.5f,%d,%d\n" 
+                        	file1.write("%d,%.7f,%.7f,%.7f,%d,%d\n" 
                                         %(i+1, self.dist_profil[i], self.profil[i], self.profil_convolved[i-self.kernelOffset], 
 					0, self.profil_segment[i]))
 
                 else:
-                        file1.write("%d,%.5f,%.5f,%.5f,%d,%d\n" %(i+1, self.dist_profil[i], self.profil[i], -999, 
+                        file1.write("%d,%.7f,%.7f,%.7f,%d,%d\n" %(i+1, self.dist_profil[i], self.profil[i], -999, 
 								0, self.profil_segment[i]))
         file1.close()
         file1NamePNG = os.path.splitext(file1NameCSV)[0] + ".png"

@@ -36,6 +36,9 @@ Usage :
 
 ## Release notes
 
+v10.7
+ * Increase precision when save files (7 digits)
+
 v10.6
  * Inverse image feature
  * Option to open both png and jpeg files
