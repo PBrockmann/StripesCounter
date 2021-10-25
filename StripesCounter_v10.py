@@ -39,7 +39,7 @@ except:
     sys.exit()
 
 #======================================================
-version = "v10.7"
+version = "v10.8"
 maximumWidth = 250
 
 #======================================================
@@ -91,6 +91,8 @@ class MainWindow(QMainWindow):
         self.labelBeta.setAlignment(Qt.AlignLeft)
         self.labelKernelSize = QLabel("Kernel size: " + str(self.kernelSize))
         self.labelKernelSize.setAlignment(Qt.AlignLeft)
+        self.labelProfilLinewidth = QLabel("Profil linewidth: " + str(self.profilLinewidth))
+        self.labelProfilLinewidth.setAlignment(Qt.AlignLeft)
         self.labelPeakUtils_minDist = QLabel("PeakUtils - Minimum distance: " + str(self.peakutils_minDist))
         self.labelPeakUtils_minDist.setAlignment(Qt.AlignLeft)
         self.labelPeakUtils_thres = QLabel("PeakUtils - Threshold: " + str(self.peakutils_thres))
@@ -123,6 +125,15 @@ class MainWindow(QMainWindow):
         self.mySliderKernelSize.setSingleStep(2)
         self.mySliderKernelSize.setTickPosition(QSlider.TicksBelow)
         self.mySliderKernelSize.valueChanged[int].connect(self.changeValueKernelSize)
+
+        self.mySliderProfilLinewidth = QSlider(Qt.Horizontal, self)
+        self.mySliderProfilLinewidth.setMaximumWidth(maximumWidth)
+        self.mySliderProfilLinewidth.setMinimum(1)
+        self.mySliderProfilLinewidth.setMaximum(25)
+        self.mySliderProfilLinewidth.setValue(self.profilLinewidth)
+        self.mySliderProfilLinewidth.setTickInterval(1)
+        self.mySliderProfilLinewidth.setTickPosition(QSlider.TicksBelow)
+        self.mySliderProfilLinewidth.valueChanged[int].connect(self.changeValueProfilLinewidth)
 
         self.mySliderPeakUtils_minDist = QSlider(Qt.Horizontal, self)
         self.mySliderPeakUtils_minDist.setMaximumWidth(maximumWidth)
@@ -199,6 +210,9 @@ class MainWindow(QMainWindow):
         layoutV2.addWidget(self.labelKernelSize)
         layoutV2.addWidget(self.mySliderKernelSize)
         layoutV2.addSpacing(1)
+        layoutV2.addWidget(self.labelProfilLinewidth)
+        layoutV2.addWidget(self.mySliderProfilLinewidth)
+        layoutV2.addSpacing(1)
         layoutV2.addWidget(self.labelPeakUtils_minDist)
         layoutV2.addWidget(self.mySliderPeakUtils_minDist)
         layoutV2.addSpacing(1)
@@ -223,7 +237,7 @@ class MainWindow(QMainWindow):
 
     #------------------------------------------------------------------
     def initValues(self):
-        self.point_alpha_default = 0.4
+        self.alpha_default = 0.3
 
         self.line_object = None
         self.scale_object = None
@@ -246,6 +260,7 @@ class MainWindow(QMainWindow):
 
         self.kernelSize = 3 
         self.kernelOffset = 0
+        self.profilLinewidth = 2
         self.peakutils_minDist = 1
         self.peakutils_thres = 0.5
 
@@ -271,6 +286,8 @@ class MainWindow(QMainWindow):
         self.mySliderBeta.setEnabled(False)
         self.labelKernelSize.setEnabled(False)
         self.mySliderKernelSize.setEnabled(False)
+        self.labelProfilLinewidth.setEnabled(False)
+        self.mySliderProfilLinewidth.setEnabled(False)
         self.labelPeakUtils_thres.setEnabled(False)
         self.mySliderPeakUtils_thres.setEnabled(False)
         self.labelPeakUtils_minDist.setEnabled(False)
@@ -282,6 +299,7 @@ class MainWindow(QMainWindow):
         self.buttonSave.setEnabled(False)
 
         self.mySliderKernelSize.setValue(self.kernelSize)
+        self.mySliderProfilLinewidth.setValue(self.profilLinewidth)
         self.mySliderPeakUtils_minDist.setValue(self.peakutils_minDist)
         self.mySliderPeakUtils_thres.setValue(int(self.peakutils_thres*10))
 
@@ -320,6 +338,13 @@ class MainWindow(QMainWindow):
             self.kernelSize = value
             self.labelKernelSize.setText("Kernel size: " + str(self.kernelSize))
             self.drawProfil()
+
+    #------------------------------------------------------------------
+    def changeValueProfilLinewidth(self, value):
+        self.profilLinewidth= value
+        self.labelProfilLinewidth.setText("Profile linewidth: " + str(self.profilLinewidth))
+        self.line_object[0].set_linewidth(self.profilLinewidth)
+        self.drawProfil()
 
     #------------------------------------------------------------------
     def changeValuePeakUtils_minDist(self, value):
@@ -405,7 +430,7 @@ class MainWindow(QMainWindow):
                         x, y = event.mouseevent.xdata, event.mouseevent.ydata
                         newPointLabel = "point"+str(self.n)
                         point_object = patches.Circle([x, y], radius=50, color='r', fill=False, lw=2,
-                                alpha=self.point_alpha_default, transform=self.ax[0].transData, label=newPointLabel)
+                                alpha=self.alpha_default, transform=self.ax[0].transData, label=newPointLabel)
                         point_object.set_picker(5)
                         self.ax[0].add_patch(point_object)
                         xdata = list(self.line_object[0].get_xdata())
@@ -459,7 +484,7 @@ class MainWindow(QMainWindow):
             i = ind["ind"][0]
             self.peakHover0 = self.ax[0].scatter(self.profil_mx[self.indexes[i]+self.kernelOffset], 
                                                  self.profil_my[self.indexes[i]+self.kernelOffset], 
-                                                 c='yellow', s=10)
+                                                 c='yellow', s=10, zorder=12)
             self.peakHover1 = self.ax[1].scatter(self.dist_profil[self.indexes[i]+self.kernelOffset], 
                                                  self.profil_convolved[self.indexes[i]], 
                                                  c='yellow', s=200, edgecolors='b', lw=1, alpha=0.8, zorder=0)
@@ -526,7 +551,7 @@ class MainWindow(QMainWindow):
                 x, y = event.xdata, event.ydata
                 newPointLabel = "point"+str(self.n)
                 point_object = patches.Circle([x, y], radius=50, color='r', fill=False, lw=2,
-                        alpha=self.point_alpha_default, transform=self.ax[0].transData, label=newPointLabel)
+                        alpha=self.alpha_default, transform=self.ax[0].transData, label=newPointLabel)
                 point_object.set_picker(5)
                 self.ax[0].add_patch(point_object)
                 self.listLabelPoints.append(newPointLabel)
@@ -537,7 +562,7 @@ class MainWindow(QMainWindow):
                         cx, cy = p.center
                         xdata.append(cx)
                         ydata.append(cy)
-                    self.line_object = self.ax[0].plot(xdata, ydata, alpha=0.5, c='r', lw=2, picker=True)
+                    self.line_object = self.ax[0].plot(xdata, ydata, alpha=self.alpha_default, c='r', lw=self.profilLinewidth, picker=True)
                     self.line_object[0].set_pickradius(5)
                 self.canvas.draw()
                 self.drawProfil()
@@ -565,12 +590,12 @@ class MainWindow(QMainWindow):
             for i in range(0,len(xdata)-1):
                 #print("---", i, xdata[i], xdata[i+1])
                 profil_tmp = profile_line(self.adjusted, (ydata[i], xdata[i]), (ydata[i+1], xdata[i+1]),
-                                            order=0, mode='constant', cval=0)
+                                            order=0, mode='constant', cval=0, linewidth=self.profilLinewidth)
 
                 profil_mx_tmp = profile_line(self.mx, (ydata[i], xdata[i]), (ydata[i+1], xdata[i+1]),
-                                            order=0, mode='constant', cval=0)
+                                            order=0, mode='constant', cval=0, linewidth=self.profilLinewidth)
                 profil_my_tmp = profile_line(self.my, (ydata[i], xdata[i]), (ydata[i+1], xdata[i+1]),
-                                            order=0, mode='constant', cval=0)
+                                            order=0, mode='constant', cval=0, linewidth=self.profilLinewidth)
 
                 self.profil = np.concatenate((self.profil, profil_tmp))
                 self.profil_mx = np.concatenate((self.profil_mx, profil_mx_tmp))
@@ -618,7 +643,7 @@ class MainWindow(QMainWindow):
                 self.peaks = None
             if self.cboxPeaks.isChecked():
                 self.peaks = self.ax[0].scatter(self.profil_mx[self.indexes+self.kernelOffset], 
-                                                self.profil_my[self.indexes+self.kernelOffset], c='b', s=5)
+                                                self.profil_my[self.indexes+self.kernelOffset], c='b', s=5, zorder=10)
            
             stripesNb = len(self.indexes)
             stripesDist = self.dist_profil[self.indexes[-1]+self.kernelOffset]-self.dist_profil[self.indexes[0]+self.kernelOffset]
@@ -635,6 +660,8 @@ class MainWindow(QMainWindow):
 
             self.labelKernelSize.setEnabled(True)
             self.mySliderKernelSize.setEnabled(True)
+            self.labelProfilLinewidth.setEnabled(True)
+            self.mySliderProfilLinewidth.setEnabled(True)
             self.labelPeakUtils_minDist.setEnabled(True)
             self.mySliderPeakUtils_minDist.setEnabled(True)
             self.labelPeakUtils_thres.setEnabled(True)
@@ -798,6 +825,7 @@ class MainWindow(QMainWindow):
         file1.write("# Contrast level: %.1f\n" %(self.alphaLevel))
         file1.write("# Brightness level: %d\n" %(self.betaLevel))
         file1.write("# Kernel size: %d\n" %(self.kernelSize))
+        file1.write("# Profil linewidth: %d\n" %(self.profilLinewidth))
         file1.write("# PeakUtils - Minimum distance: %d\n" %(self.peakutils_minDist))
         file1.write("# PeakUtils - Threshold: %.1f\n" %(self.peakutils_thres))
         xdata = list(self.line_object[0].get_xdata())
@@ -872,6 +900,7 @@ class MainWindow(QMainWindow):
          * Number of peaks (stripes) are counted from the smoothed profil
          * Adapt various parameters for peak dectection and smoothing
          * Move, modify the profil line and control points if needed
+         * Control the width of the profil line
          * Inspect detected peaks with a mouse over from image or profil 
          * Define new scale and scale value if needed
          * Save the image and the data points, visualize the extracted profil

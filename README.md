@@ -6,14 +6,16 @@ A PyQt Matplotlib python application to count stripes from microscopic images
  * Display of the microscopic image with a grayscale color map
  * Control of the contrast and the brightness of the image
  * Definition of a profil line from mouse double clicks
- * The profil line can be redefined, moved by picking the line or its bounds
+ * Add/Remove points to define a segmented profil
+ * Move the profil by picking its line or its control points
+ * Smooth the intensity calcul from the control of the profil line width
  * Extraction of the profil
  * Smoothing (convolution) from a variable length kernel
  * Detection of the number of the peaks (number of stripes)
  * Display of detected peaks on image
  * Growth rate display
 
-![ScreenShot](StripesCounter_v10.gif)  
+![ScreenShot](StripesCounter_v10.8.gif)  
 
 Usage :
 
@@ -30,11 +32,15 @@ Usage :
  * Number of peaks (stripes) are counted from the smoothed profil
  * Adapt various parameters for peak dectection and smoothing
  * Move, modify the profil line and control points if needed
+ * Control the width of the profil line
  * Inspect detected peaks with a mouse over from image or profil
  * Define new scale and scale value if needed
  * Save the image and the data points, visualize the extracted profil
 
 ## Release notes
+
+v10.8
+ * Add profil line width control
 
 v10.7
  * Increase precision when save files (7 digits)
@@ -82,18 +88,20 @@ v09.0
 
 `$ git clone https://github.com/PBrockmann/StripesCounter`
 
-Tested with 
- * python=3.8.5
- * pyqt=5.12.3
- * matplotlib=3.4.1
- * opencv=4.5.1
+Tested with
+ * matplotlib=3.4.3
+ * opencv=4.5.4.58
+ * opencv-contrib-python=4.5.4.58
  * peakutils=1.3.3
- * scikit-image=0.17.2
- * shapely=1.7.1 
+ * pyqt=5.12.3
+ * pytesseract=0.3.8 
+ * python=3.8.12
+ * scikit-image=0.18.1
+ * shapely=1.7.1
 
 ## Contrast and brighness reference 
 
-https://docs.opencv.org/4.5.2/d3/dc1/tutorial_basic_linear_transform.html
+https://docs.opencv.org/4.5.4/d3/dc1/tutorial_basic_linear_transform.html
 
 ## PeakUtils reference
 
