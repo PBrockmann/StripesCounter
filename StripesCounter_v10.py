@@ -39,7 +39,7 @@ except:
     sys.exit()
 
 #======================================================
-version = "v10.8"
+version = "v10.81"
 maximumWidth = 250
 
 #======================================================
@@ -739,7 +739,7 @@ class MainWindow(QMainWindow):
         dialog.setLabelText("Value: ")
         dialog.setDoubleMinimum(0)
         dialog.setDoubleMaximum(100)
-        dialog.setDoubleStep(1)
+        dialog.setIntStep(1)
         dialog.setDoubleDecimals(3)
         dialog.setDoubleValue(self.scaleValue)
         dialog.setWindowTitle("Get scale value")
@@ -788,7 +788,8 @@ class MainWindow(QMainWindow):
         img = cv2.imread(self.imageFileName)
         (self.mx, self.my) = np.meshgrid(np.arange(img.shape[1]), np.arange(img.shape[0]))
         self.gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        self.mask = cv2.inRange(self.gray, 0, 0)
+        mask0 = cv2.inRange(self.gray, 0, 0)
+        self.mask = cv2.bitwise_not(mask0)
         self.alphaLevel =  self.mySliderAlpha.value()/10.
         self.betaLevel = self.mySliderBeta.value()
         self.adjusted = cv2.convertScaleAbs(self.gray, alpha=self.alphaLevel, beta=self.betaLevel)

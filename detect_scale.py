@@ -25,9 +25,13 @@ mask = cv2.inRange(gray, 0, 0)
 print("Writing mask.png")
 cv2.imwrite('mask.png', mask)
 
+# https://github.com/tesseract-ocr/tesseract/issues/1913
+maskinv= cv2.bitwise_not(mask)
+cv2.imwrite('maskinv.png', maskinv)
+
 #------------------------------------------------------------------
 try:
-    scaleDetected = pytesseract.image_to_string(mask)
+    scaleDetected = pytesseract.image_to_string(maskinv)
     matchObj = re.match(r'[^0-9]*([0-9]*)mm', scaleDetected.strip())
     scaleValue = float(matchObj.group(1))
     print("Detected scale value: ", scaleValue)
