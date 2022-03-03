@@ -39,6 +39,10 @@ Usage :
 
 ## Release notes
 
+v10.82
+ * Smaller radius for control points
+ * PeakUtils - Threshold with 0.05 increment steps
+
 v10.81
  * Fix with tesseract v5.0.1
  * Fix error in setting scale value

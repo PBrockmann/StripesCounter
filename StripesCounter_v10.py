@@ -39,7 +39,7 @@ except:
     sys.exit()
 
 #======================================================
-version = "v10.81"
+version = "v10.82"
 maximumWidth = 250
 
 #======================================================
@@ -95,7 +95,7 @@ class MainWindow(QMainWindow):
         self.labelProfilLinewidth.setAlignment(Qt.AlignLeft)
         self.labelPeakUtils_minDist = QLabel("PeakUtils - Minimum distance: " + str(self.peakutils_minDist))
         self.labelPeakUtils_minDist.setAlignment(Qt.AlignLeft)
-        self.labelPeakUtils_thres = QLabel("PeakUtils - Threshold: " + str(self.peakutils_thres))
+        self.labelPeakUtils_thres = QLabel("PeakUtils - Threshold: %.02f" % self.peakutils_thres)
         self.labelPeakUtils_thres.setAlignment(Qt.AlignLeft)
 
         self.mySliderAlpha = QSlider(Qt.Horizontal, self)
@@ -146,10 +146,11 @@ class MainWindow(QMainWindow):
 
         self.mySliderPeakUtils_thres = QSlider(Qt.Horizontal, self)
         self.mySliderPeakUtils_thres.setMaximumWidth(maximumWidth)
-        self.mySliderPeakUtils_thres.setMinimum(1)
-        self.mySliderPeakUtils_thres.setMaximum(9)
-        self.mySliderPeakUtils_thres.setValue(int(self.peakutils_thres*10))
-        self.mySliderPeakUtils_thres.setTickInterval(1)
+        self.mySliderPeakUtils_thres.setMinimum(0)
+        self.mySliderPeakUtils_thres.setMaximum(100)
+        self.mySliderPeakUtils_thres.setValue(int(self.peakutils_thres*100))
+        self.mySliderPeakUtils_thres.setTickInterval(5)
+        self.mySliderPeakUtils_thres.setSingleStep(5)
         self.mySliderPeakUtils_thres.setTickPosition(QSlider.TicksBelow)
         self.mySliderPeakUtils_thres.valueChanged[int].connect(self.changeValuePeakUtils_thres)
 
@@ -262,7 +263,7 @@ class MainWindow(QMainWindow):
         self.kernelOffset = 0
         self.profilLinewidth = 2
         self.peakutils_minDist = 1
-        self.peakutils_thres = 0.5
+        self.peakutils_thres = 0.50
 
         self.dist_profil = None
         self.profil = None
@@ -275,6 +276,8 @@ class MainWindow(QMainWindow):
 
         self.line1 = self.line2 = self.line3 = None
         self.counterFilename = 1
+
+        self.radius = 20
 
     #------------------------------------------------------------------
     def initInterface(self):
@@ -301,7 +304,7 @@ class MainWindow(QMainWindow):
         self.mySliderKernelSize.setValue(self.kernelSize)
         self.mySliderProfilLinewidth.setValue(self.profilLinewidth)
         self.mySliderPeakUtils_minDist.setValue(self.peakutils_minDist)
-        self.mySliderPeakUtils_thres.setValue(int(self.peakutils_thres*10))
+        self.mySliderPeakUtils_thres.setValue(int(self.peakutils_thres*100))
 
         self.ax[0].set_visible(False)
         self.ax[1].set_visible(False)
@@ -354,8 +357,9 @@ class MainWindow(QMainWindow):
         
     #------------------------------------------------------------------
     def changeValuePeakUtils_thres(self, value):
-        self.peakutils_thres = value/10.
-        self.labelPeakUtils_thres.setText("PeakUtils - Threshold: " + str(self.peakutils_thres))
+        if value%5 != 0: return
+        self.peakutils_thres = value/100.
+        self.labelPeakUtils_thres.setText("PeakUtils - Threshold: %.02f" % self.peakutils_thres)
         self.drawProfil()
 
     #------------------------------------------------------------------
@@ -429,7 +433,7 @@ class MainWindow(QMainWindow):
                         self.n = self.n+1
                         x, y = event.mouseevent.xdata, event.mouseevent.ydata
                         newPointLabel = "point"+str(self.n)
-                        point_object = patches.Circle([x, y], radius=50, color='r', fill=False, lw=2,
+                        point_object = patches.Circle([x, y], radius=self.radius, color='r', fill=False, lw=2,
                                 alpha=self.alpha_default, transform=self.ax[0].transData, label=newPointLabel)
                         point_object.set_picker(5)
                         self.ax[0].add_patch(point_object)
@@ -550,7 +554,7 @@ class MainWindow(QMainWindow):
                 self.n = self.n+1
                 x, y = event.xdata, event.ydata
                 newPointLabel = "point"+str(self.n)
-                point_object = patches.Circle([x, y], radius=50, color='r', fill=False, lw=2,
+                point_object = patches.Circle([x, y], radius=self.radius, color='r', fill=False, lw=2,
                         alpha=self.alpha_default, transform=self.ax[0].transData, label=newPointLabel)
                 point_object.set_picker(5)
                 self.ax[0].add_patch(point_object)
@@ -828,7 +832,7 @@ class MainWindow(QMainWindow):
         file1.write("# Kernel size: %d\n" %(self.kernelSize))
         file1.write("# Profil linewidth: %d\n" %(self.profilLinewidth))
         file1.write("# PeakUtils - Minimum distance: %d\n" %(self.peakutils_minDist))
-        file1.write("# PeakUtils - Threshold: %.1f\n" %(self.peakutils_thres))
+        file1.write("# PeakUtils - Threshold: %.02f\n" %(self.peakutils_thres))
         xdata = list(self.line_object[0].get_xdata())
         ydata = list(self.line_object[0].get_ydata())
         file1.write("# Number of segments: %d\n" %(len(xdata)-1))
@@ -876,7 +880,7 @@ class MainWindow(QMainWindow):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
         self.imageFileName, _ = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", 
-                "","PNG & JPG Files (*.png *.jpg);;PNG Files (*.png);;JPG Files (*.jpg);;All Files (*)", options=options)
+                "","PNG, JPG, TIF Files (*.png *.jpg *.tif);;PNG Files (*.png);;JPG Files (*.jpg);;TIF Files (*.tif);;All Files (*)", options=options)
         if self.imageFileName:
             self.displayImage()
 
