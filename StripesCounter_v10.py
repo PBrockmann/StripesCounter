@@ -39,7 +39,7 @@ except:
     sys.exit()
 
 #======================================================
-version = "v10.82"
+version = "v10.90"
 maximumWidth = 250
 
 #======================================================
@@ -95,7 +95,7 @@ class MainWindow(QMainWindow):
         self.labelProfilLinewidth.setAlignment(Qt.AlignLeft)
         self.labelPeakUtils_minDist = QLabel("PeakUtils - Minimum distance: " + str(self.peakutils_minDist))
         self.labelPeakUtils_minDist.setAlignment(Qt.AlignLeft)
-        self.labelPeakUtils_thres = QLabel("PeakUtils - Threshold: %.02f" % self.peakutils_thres)
+        self.labelPeakUtils_thres = QLabel("PeakUtils - Threshold: %d" % self.peakutils_thres)
         self.labelPeakUtils_thres.setAlignment(Qt.AlignLeft)
 
         self.mySliderAlpha = QSlider(Qt.Horizontal, self)
@@ -129,7 +129,7 @@ class MainWindow(QMainWindow):
         self.mySliderProfilLinewidth = QSlider(Qt.Horizontal, self)
         self.mySliderProfilLinewidth.setMaximumWidth(maximumWidth)
         self.mySliderProfilLinewidth.setMinimum(1)
-        self.mySliderProfilLinewidth.setMaximum(25)
+        self.mySliderProfilLinewidth.setMaximum(50)
         self.mySliderProfilLinewidth.setValue(self.profilLinewidth)
         self.mySliderProfilLinewidth.setTickInterval(1)
         self.mySliderProfilLinewidth.setTickPosition(QSlider.TicksBelow)
@@ -147,10 +147,9 @@ class MainWindow(QMainWindow):
         self.mySliderPeakUtils_thres = QSlider(Qt.Horizontal, self)
         self.mySliderPeakUtils_thres.setMaximumWidth(maximumWidth)
         self.mySliderPeakUtils_thres.setMinimum(0)
-        self.mySliderPeakUtils_thres.setMaximum(100)
-        self.mySliderPeakUtils_thres.setValue(int(self.peakutils_thres*100))
+        self.mySliderPeakUtils_thres.setMaximum(255)
+        self.mySliderPeakUtils_thres.setValue(self.peakutils_thres)
         self.mySliderPeakUtils_thres.setTickInterval(5)
-        self.mySliderPeakUtils_thres.setSingleStep(5)
         self.mySliderPeakUtils_thres.setTickPosition(QSlider.TicksBelow)
         self.mySliderPeakUtils_thres.valueChanged[int].connect(self.changeValuePeakUtils_thres)
 
@@ -158,9 +157,13 @@ class MainWindow(QMainWindow):
         self.cboxPeaks.setChecked(False)
         self.cboxPeaks.toggled.connect(self.toggled_cboxPeaks)
 
+        self.cboxReverseProfil = QCheckBox("Reverse profil")
+        self.cboxReverseProfil.setChecked(False)
+        self.cboxReverseProfil.toggled.connect(self.toggled_cboxReverseProfil)
+
         #-----------------------
-        self.fig, self.ax = plt.subplots(nrows=2, figsize=(8,8), gridspec_kw={
-                           'height_ratios': [2, 1]})
+        #self.fig, self.ax = plt.subplots(nrows=2, figsize=(8,8), gridspec_kw={'height_ratios': [2, 1]})
+        self.fig, self.ax = plt.subplots(nrows=2, figsize=(8,8))
         self.fig.tight_layout()
         self.fig.subplots_adjust(top=0.9, bottom=0.15)
 
@@ -220,6 +223,7 @@ class MainWindow(QMainWindow):
         layoutV2.addWidget(self.labelPeakUtils_thres)
         layoutV2.addWidget(self.mySliderPeakUtils_thres)
         layoutV2.addWidget(self.cboxPeaks)
+        layoutV2.addWidget(self.cboxReverseProfil)
         layoutV2.addSpacing(5)
         layoutV2.addWidget(self.buttonDefineScaleValue)
         layoutV2.addWidget(self.buttonDefineScale)
@@ -241,6 +245,7 @@ class MainWindow(QMainWindow):
         self.alpha_default = 0.3
 
         self.line_object = None
+        self.lineWithWidthList = []
         self.scale_object = None
         self.scaleValue_object = None
 
@@ -263,7 +268,7 @@ class MainWindow(QMainWindow):
         self.kernelOffset = 0
         self.profilLinewidth = 2
         self.peakutils_minDist = 1
-        self.peakutils_thres = 0.50
+        self.peakutils_thres = 125 
 
         self.dist_profil = None
         self.profil = None
@@ -277,7 +282,7 @@ class MainWindow(QMainWindow):
         self.line1 = self.line2 = self.line3 = None
         self.counterFilename = 1
 
-        self.radius = 20
+        self.radius = 25
 
     #------------------------------------------------------------------
     def initInterface(self):
@@ -295,8 +300,10 @@ class MainWindow(QMainWindow):
         self.mySliderPeakUtils_thres.setEnabled(False)
         self.labelPeakUtils_minDist.setEnabled(False)
         self.cboxPeaks.setEnabled(False)
+        self.cboxReverseProfil.setEnabled(False)
         self.mySliderPeakUtils_minDist.setEnabled(False)
         self.cboxPeaks.setChecked(False)
+        self.cboxReverseProfil.setChecked(False)
         self.buttonDefineScale.setEnabled(False)
         self.buttonDefineScaleValue.setEnabled(False)
         self.buttonSave.setEnabled(False)
@@ -304,7 +311,7 @@ class MainWindow(QMainWindow):
         self.mySliderKernelSize.setValue(self.kernelSize)
         self.mySliderProfilLinewidth.setValue(self.profilLinewidth)
         self.mySliderPeakUtils_minDist.setValue(self.peakutils_minDist)
-        self.mySliderPeakUtils_thres.setValue(int(self.peakutils_thres*100))
+        self.mySliderPeakUtils_thres.setValue(self.peakutils_thres)
 
         self.ax[0].set_visible(False)
         self.ax[1].set_visible(False)
@@ -346,7 +353,8 @@ class MainWindow(QMainWindow):
     def changeValueProfilLinewidth(self, value):
         self.profilLinewidth= value
         self.labelProfilLinewidth.setText("Profile linewidth: " + str(self.profilLinewidth))
-        self.line_object[0].set_linewidth(self.profilLinewidth)
+        self.update_lineWithWidthList()
+        self.canvas.draw()
         self.drawProfil()
 
     #------------------------------------------------------------------
@@ -357,13 +365,16 @@ class MainWindow(QMainWindow):
         
     #------------------------------------------------------------------
     def changeValuePeakUtils_thres(self, value):
-        if value%5 != 0: return
-        self.peakutils_thres = value/100.
-        self.labelPeakUtils_thres.setText("PeakUtils - Threshold: %.02f" % self.peakutils_thres)
+        self.peakutils_thres = value
+        self.labelPeakUtils_thres.setText("PeakUtils - Threshold: %d" % self.peakutils_thres)
         self.drawProfil()
 
     #------------------------------------------------------------------
     def toggled_cboxPeaks(self):
+        self.drawProfil()
+
+    #------------------------------------------------------------------
+    def toggled_cboxReverseProfil(self):
         self.drawProfil()
 
     #------------------------------------------------------------------
@@ -391,15 +402,25 @@ class MainWindow(QMainWindow):
             rely = (cur_ylim[1] - ydata)/(cur_ylim[1] - cur_ylim[0])
             self.ax[0].set_xlim([xdata - new_width * (1-relx), xdata + new_width * (relx)])
             self.ax[0].set_ylim([ydata - new_height * (1-rely), ydata + new_height * (rely)])
+
             self.canvas.draw()
 
     #------------------------------------------------------------------
     def on_release(self, event):
         self.current_artist = None
         self.press = False
+        if self.line_object != None:
+            self.line_object.set_alpha(self.alpha_default)
+        for p in list(self.ax[0].patches):
+            p.set_alpha(self.alpha_default)
+        self.canvas.draw()
 
     #------------------------------------------------------------------
     def on_pick(self, event):
+
+        if event.mouseevent.button != 1:   # https://stackoverflow.com/questions/29086662/matplotlib-pick-event-functionality
+            return
+
         if self.current_artist is None:
             self.current_artist = event.artist
             #print("pick ", self.current_artist)
@@ -410,8 +431,8 @@ class MainWindow(QMainWindow):
                         if len(self.ax[0].patches) > 2:
                             #print("\ndelete", event.artist.get_label())
                             event.artist.remove()
-                            xdata = list(self.line_object[0].get_xdata())
-                            ydata = list(self.line_object[0].get_ydata())
+                            xdata = list(self.line_object.get_xdata())
+                            ydata = list(self.line_object.get_ydata())
                             for i in range(0,len(xdata)):
                                 if event.artist.get_label() == self.listLabelPoints[i]:
                                     xdata.pop(i) 
@@ -419,13 +440,16 @@ class MainWindow(QMainWindow):
                                     self.listLabelPoints.pop(i)
                                     break
                             #print('--->', self.listLabelPoints)
-                            self.line_object[0].set_data(xdata, ydata)
+                            self.line_object.set_data(xdata, ydata)
+                            self.update_lineWithWidthList()
                             self.drawProfil()
                             self.canvas.draw()
                 else:
                     x0, y0 = self.current_artist.center
                     x1, y1 = event.mouseevent.xdata, event.mouseevent.ydata
                     self.offset = [(x0 - x1), (y0 - y1)]
+                    event.artist.set_alpha(1.0)
+                    self.canvas.draw()
             elif isinstance(event.artist, Line2D):
                 if event.mouseevent.dblclick:
                     if self.mousepress == "left":
@@ -433,12 +457,12 @@ class MainWindow(QMainWindow):
                         self.n = self.n+1
                         x, y = event.mouseevent.xdata, event.mouseevent.ydata
                         newPointLabel = "point"+str(self.n)
-                        point_object = patches.Circle([x, y], radius=self.radius, color='r', fill=False, lw=2,
+                        point_object = patches.Circle([x, y], radius=self.radius, color='red', fill=False, lw=2,
                                 alpha=self.alpha_default, transform=self.ax[0].transData, label=newPointLabel)
                         point_object.set_picker(5)
                         self.ax[0].add_patch(point_object)
-                        xdata = list(self.line_object[0].get_xdata())
-                        ydata = list(self.line_object[0].get_ydata())
+                        xdata = list(self.line_object.get_xdata())
+                        ydata = list(self.line_object.get_ydata())
                         #print('\ninit', self.listLabelPoints)
                         pointInserted = False
                         for i in range(0,len(xdata)-1):
@@ -453,7 +477,8 @@ class MainWindow(QMainWindow):
                                 pointInserted = True
                                 #print("include", newPointLabel)
                                 break
-                        self.line_object[0].set_data(xdata, ydata)
+                        self.line_object.set_data(xdata, ydata)
+                        self.update_lineWithWidthList()
                         #print('final', listLabelPoints)
                         #if not pointInserted:
                             #print("Error: point not inserted, too far from line")
@@ -465,6 +490,8 @@ class MainWindow(QMainWindow):
                     ydata = event.artist.get_ydata()
                     x1, y1 = event.mouseevent.xdata, event.mouseevent.ydata
                     self.offset = xdata[0] - x1, ydata[0] - y1
+                    event.artist.set_alpha(1.0)
+                    self.canvas.draw()
 
     #------------------------------------------------------------------
     def on_motion(self, event):
@@ -480,17 +507,17 @@ class MainWindow(QMainWindow):
             self.canvas.draw()
 
         cont = False
-        if event.inaxes == self.ax[0] and self.cboxPeaks.isChecked():
+        if event.inaxes == self.ax[0] and self.peaks != None and self.cboxPeaks.isChecked():
             cont, ind = self.peaks.contains(event)
         elif event.inaxes == self.ax[1]:
             cont, ind = self.peaksCurve.contains(event)
-        if cont:
+        if cont and self.peaks != None:
             i = ind["ind"][0]
-            self.peakHover0 = self.ax[0].scatter(self.profil_mx[self.indexes[i]+self.kernelOffset], 
-                                                 self.profil_my[self.indexes[i]+self.kernelOffset], 
+            pos = self.peaks.get_offsets()[i]
+            self.peakHover0 = self.ax[0].scatter(pos[0], pos[1],
                                                  c='yellow', s=10, zorder=12)
-            self.peakHover1 = self.ax[1].scatter(self.dist_profil[self.indexes[i]+self.kernelOffset], 
-                                                 self.profil_convolved[self.indexes[i]], 
+            pos = self.peaksCurve.get_offsets()[i]
+            self.peakHover1 = self.ax[1].scatter(pos[0], pos[1],
                                                  c='yellow', s=200, edgecolors='b', lw=1, alpha=0.8, zorder=0)
             self.canvas.draw()
 
@@ -505,27 +532,28 @@ class MainWindow(QMainWindow):
                 cx, cy =  event.xdata + dx, event.ydata + dy
                 self.current_artist.center = cx, cy
                 #print("moving", self.current_artist.get_label())
-                xdata = list(self.line_object[0].get_xdata())
-                ydata = list(self.line_object[0].get_ydata())
+                xdata = list(self.line_object.get_xdata())
+                ydata = list(self.line_object.get_ydata())
                 for i in range(0,len(xdata)): 
                     if self.listLabelPoints[i] == self.current_artist.get_label():
                         xdata[i] = cx
                         ydata[i] = cy
                         break
-                self.line_object[0].set_data(xdata, ydata)
+                self.line_object.set_data(xdata, ydata)
             elif isinstance(self.current_artist, Line2D):
-                xdata = list(self.line_object[0].get_xdata())
-                ydata = list(self.line_object[0].get_ydata())
+                xdata = list(self.line_object.get_xdata())
+                ydata = list(self.line_object.get_ydata())
                 xdata0 = xdata[0]
                 ydata0 = ydata[0]
                 for i in range(0,len(xdata)): 
                         xdata[i] = event.xdata + dx + xdata[i] - xdata0
                         ydata[i] = event.ydata + dy + ydata[i] - ydata0 
-                self.line_object[0].set_data(xdata, ydata)
-                for p in self.ax[0].patches:
+                self.line_object.set_data(xdata, ydata)
+                for p in list(self.ax[0].patches):
                     pointLabel = p.get_label()
                     i = self.listLabelPoints.index(pointLabel) 
                     p.center = xdata[i], ydata[i]
+            self.update_lineWithWidthList()
             self.canvas.draw()
             self.drawProfil()
         elif event.inaxes == self.ax[0]:              # to zoom and pan in ax[0]
@@ -536,7 +564,7 @@ class MainWindow(QMainWindow):
             self.ax[0].set_xlim(self.cur_xlim)
             self.ax[0].set_ylim(self.cur_ylim)
             self.canvas.draw()
-        
+
     #------------------------------------------------------------------
     def on_press(self, event):
         self.press = True
@@ -554,7 +582,7 @@ class MainWindow(QMainWindow):
                 self.n = self.n+1
                 x, y = event.xdata, event.ydata
                 newPointLabel = "point"+str(self.n)
-                point_object = patches.Circle([x, y], radius=self.radius, color='r', fill=False, lw=2,
+                point_object = patches.Circle([x, y], radius=self.radius, color='red', fill=False, lw=2,
                         alpha=self.alpha_default, transform=self.ax[0].transData, label=newPointLabel)
                 point_object.set_picker(5)
                 self.ax[0].add_patch(point_object)
@@ -562,12 +590,12 @@ class MainWindow(QMainWindow):
                 if len(self.listLabelPoints) == 2:
                     xdata = []
                     ydata = []
-                    for p in self.ax[0].patches:
+                    for p in list(self.ax[0].patches):
                         cx, cy = p.center
                         xdata.append(cx)
                         ydata.append(cy)
-                    self.line_object = self.ax[0].plot(xdata, ydata, alpha=self.alpha_default, c='r', lw=self.profilLinewidth, picker=True)
-                    self.line_object[0].set_pickradius(5)
+                    self.line_object, = self.ax[0].plot(xdata, ydata, alpha=self.alpha_default, c='red', lw=2, picker=True)
+                    self.line_object.set_pickradius(5)
                 self.canvas.draw()
                 self.drawProfil()
 
@@ -582,8 +610,9 @@ class MainWindow(QMainWindow):
             else:
                 self.scalePixel = 1
 
-            xdata = self.line_object[0].get_xdata()
-            ydata = self.line_object[0].get_ydata()
+            xdata = list(self.line_object.get_xdata())
+            ydata = list(self.line_object.get_ydata())
+            line = LineString(list(zip(xdata,ydata)))
 
             listEndSegment = [0]
             self.profil =  np.array([]) 
@@ -617,50 +646,56 @@ class MainWindow(QMainWindow):
             self.ax[1].clear()
             self.ax[1].set_facecolor('whitesmoke')
             
-            self.ax[1].plot(self.dist_profil, self.profil, c='r', lw=1, alpha=0.8)
+            if self.cboxReverseProfil.isChecked():
+            	self.profil = 255 - self.profil
+            self.ax[1].plot(self.dist_profil, self.profil, c='red', lw=1, alpha=0.8)
+
             for x in listEndSegment:
                 self.ax[1].axvline(x=x, linestyle='dashed', color='red', alpha=0.8)
             
             kernel = np.ones(self.kernelSize) / self.kernelSize
             self.kernelOffset = int(self.kernelSize/2)
             
-            # mode='same' gives artefact at start and end 
-            #self.profil_convolved = np.convolve(self.profil, self.kernel, mode='same')
-            #self.ax[1].plot(self.dist_profil, self.profil_convolved, c='c', lw=1, alpha=0.8)
-            
-            # use mode='valid' but need to take into account with absysse values 
-            #   (dist_profil[int(kernelSize/2):-int(kernelSize/2)])
-            self.profil_convolved = np.convolve(self.profil, kernel, mode='valid')
-            if self.kernelSize == 1:
-                self.ax[1].plot(self.dist_profil, self.profil_convolved, c='b', lw=1, alpha=0.8)
-            else:
-                self.ax[1].plot(self.dist_profil[self.kernelOffset:-self.kernelOffset], self.profil_convolved, c='b', lw=1, alpha=0.8)
+            # use mode='same' and put boundaries values to np.nan
+            self.profil_convolved = np.convolve(self.profil, kernel, mode='same')
+            self.profil_convolved[0:self.kernelOffset] = self.profil_convolved[-self.kernelOffset:] = np.nan
+
+            self.ax[1].plot(self.dist_profil, self.profil_convolved, c='b', lw=1, alpha=0.8)
             
             # https://peakutils.readthedocs.io/en/latest/reference.html
-            self.indexes = peakutils.indexes(self.profil_convolved, thres=self.peakutils_thres, 
-                            thres_abs=False, min_dist=self.peakutils_minDist)
-            self.peaksCurve = self.ax[1].scatter(self.dist_profil[self.indexes+self.kernelOffset], 
-                            self.profil_convolved[self.indexes], c='b', s=10)  # add offset of the kernel/2
+            self.indexes = peakutils.indexes(self.profil_convolved, thres=self.peakutils_thres, thres_abs=True, min_dist=self.peakutils_minDist)
+            self.peaksCurve = self.ax[1].scatter(self.dist_profil[self.indexes], self.profil_convolved[self.indexes], c='b', s=10)
 
             if self.peaks != None:
                 self.peaks.remove()
                 self.peaks = None
+
             if self.cboxPeaks.isChecked():
-                self.peaks = self.ax[0].scatter(self.profil_mx[self.indexes+self.kernelOffset], 
-                                                self.profil_my[self.indexes+self.kernelOffset], c='b', s=5, zorder=10)
+            	points = []
+            	for i in self.indexes:
+                	point = Point(self.profil_mx[i], self.profil_my[i])
+                	# Closest point on the line
+                	newPoint = line.interpolate(line.project(point))
+                	points.append(newPoint)
+            	xs = [point.x for point in points]
+            	ys = [point.y for point in points]
+            	self.peaks = self.ax[0].scatter(xs, ys, c='b', s=5, zorder=10)
            
             stripesNb = len(self.indexes)
-            stripesDist = self.dist_profil[self.indexes[-1]+self.kernelOffset]-self.dist_profil[self.indexes[0]+self.kernelOffset]
             self.line1 = "Number of stripes: %3d" %(stripesNb)
-            self.line2 = "Length of stripes: %.5f  (first: %.5f, last: %.5f)" \
-                         %(stripesDist, self.dist_profil[self.indexes[0]+self.kernelOffset], 
-                                        self.dist_profil[self.indexes[-1]+self.kernelOffset])
-            self.line3 = "Growth stripe rate (µm/stripe): %.5f" %(1000*stripesDist/stripesNb)
-            
+            if stripesNb > 0:
+                stripesDist = self.dist_profil[self.indexes[-1]]-self.dist_profil[self.indexes[0]]
+                self.line2 = "Length of stripes: %.5f  (first: %.5f, last: %.5f)" \
+                                %(stripesDist, self.dist_profil[self.indexes[0]], self.dist_profil[self.indexes[-1]])
+                self.line3 = "Growth stripe rate (m/stripe): %.5f" %(1000*stripesDist/stripesNb)
+            else:
+                self.line2 = ""
+                self.line3 = ""
             self.ax[1].text(0.2, 0.1, self.line1 + '\n' + self.line2 + '\n' + self.line3, 
-                    va="top", transform=self.fig.transFigure)
-            
+                                va="top", transform=self.fig.transFigure)
+         
             self.ax[1].grid(linestyle='dotted')
+            self.ax[1].axhline(self.peakutils_thres, color="b", lw=1, linestyle='solid', alpha=0.8)
 
             self.labelKernelSize.setEnabled(True)
             self.mySliderKernelSize.setEnabled(True)
@@ -671,6 +706,7 @@ class MainWindow(QMainWindow):
             self.labelPeakUtils_thres.setEnabled(True)
             self.mySliderPeakUtils_thres.setEnabled(True)
             self.cboxPeaks.setEnabled(True)
+            self.cboxReverseProfil.setEnabled(True)
             self.buttonDefineScaleValue.setEnabled(True)
             self.buttonDefineScale.setEnabled(True)
             self.buttonSave.setEnabled(True)
@@ -762,8 +798,8 @@ class MainWindow(QMainWindow):
 
     #------------------------------------------------------------------
     def defineScale(self):
-        xdata = self.line_object[0].get_xdata()
-        ydata = self.line_object[0].get_ydata()
+        xdata = self.line_object.get_xdata()
+        ydata = self.line_object.get_ydata()
         point1Scale = [xdata[0], ydata[0]]              # Scale from the 1st segment
         point2Scale = [xdata[1], ydata[1]]
         self.scaleLength = int(np.linalg.norm(np.array(point1Scale) - np.array(point2Scale)))
@@ -782,6 +818,20 @@ class MainWindow(QMainWindow):
         self.drawProfil()
 
     #------------------------------------------------------------------
+    def update_lineWithWidthList(self):
+        for line in self.lineWithWidthList:
+            line.remove()
+        self.lineWithWidthList = []
+        if self.profilLinewidth > 1:
+            xdata = list(self.line_object.get_xdata())
+            ydata = list(self.line_object.get_ydata())
+            for i in range(len(xdata)-1):
+                line = LineString([(xdata[i], ydata[i]), (xdata[i+1], ydata[i+1])])
+                dilated = line.buffer(self.profilLinewidth/2., cap_style=2, join_style=1)
+                line1, = self.ax[0].plot(*dilated.exterior.xy, alpha=self.alpha_default, c='red', lw=2)
+                self.lineWithWidthList.append(line1)
+        
+    #------------------------------------------------------------------
     def displayImage(self):
         self.initValues()
         self.initInterface()
@@ -797,7 +847,7 @@ class MainWindow(QMainWindow):
         self.alphaLevel =  self.mySliderAlpha.value()/10.
         self.betaLevel = self.mySliderBeta.value()
         self.adjusted = cv2.convertScaleAbs(self.gray, alpha=self.alphaLevel, beta=self.betaLevel)
-        self.image_object = self.ax[0].imshow(self.adjusted, cmap='gray')
+        self.image_object = self.ax[0].imshow(self.adjusted, cmap='gray', aspect='equal')
         self.detectScale()
 
         self.ax[0].set_title(os.path.basename(self.imageFileName) + '\n'
@@ -832,29 +882,23 @@ class MainWindow(QMainWindow):
         file1.write("# Kernel size: %d\n" %(self.kernelSize))
         file1.write("# Profil linewidth: %d\n" %(self.profilLinewidth))
         file1.write("# PeakUtils - Minimum distance: %d\n" %(self.peakutils_minDist))
-        file1.write("# PeakUtils - Threshold: %.02f\n" %(self.peakutils_thres))
-        xdata = list(self.line_object[0].get_xdata())
-        ydata = list(self.line_object[0].get_ydata())
+        file1.write("# PeakUtils - Threshold: %d\n" %(self.peakutils_thres))
+        xdata = list(self.line_object.get_xdata())
+        ydata = list(self.line_object.get_ydata())
         file1.write("# Number of segments: %d\n" %(len(xdata)-1))
         for i in range(0,len(xdata)):
             file1.write("#      Point%d: [%d, %d]\n" %(i+1, xdata[i], ydata[i]))
         file1.write("# " + self.line1 + '\n# ' + self.line2 + '\n# ' + self.line3 + '\n')
         file1.write("#================================================\n")
         file1.write("n,xpos,ypos1,ypos2,peak,segment\n")
+        profil_convolvedFilled = np.nan_to_num(self.profil_convolved , nan=-999)
         for i,v in enumerate(self.dist_profil):
-                if i-self.kernelOffset >= 0  and i-self.kernelOffset < len(self.profil_convolved): 
-                        if i-self.kernelOffset in self.indexes:
-                        	file1.write("%d,%.7f,%.7f,%.7f,%d,%d\n" 
-                                        %(i+1, self.dist_profil[i], self.profil[i], self.profil_convolved[i-self.kernelOffset], 
-					1, self.profil_segment[i]))
-                        else:
-                        	file1.write("%d,%.7f,%.7f,%.7f,%d,%d\n" 
-                                        %(i+1, self.dist_profil[i], self.profil[i], self.profil_convolved[i-self.kernelOffset], 
-					0, self.profil_segment[i]))
-
-                else:
-                        file1.write("%d,%.7f,%.7f,%.7f,%d,%d\n" %(i+1, self.dist_profil[i], self.profil[i], -999, 
-								0, self.profil_segment[i]))
+            if i in self.indexes:
+                file1.write("%d,%.7f,%.7f,%.7f,%d,%d\n" 
+                    %(i+1, self.dist_profil[i], self.profil[i], profil_convolvedFilled[i], 1, self.profil_segment[i]))
+            else:
+                file1.write("%d,%.7f,%.7f,%.7f,%d,%d\n" 
+                    %(i+1, self.dist_profil[i], self.profil[i], profil_convolvedFilled[i], 0, self.profil_segment[i]))
         file1.close()
         file1NamePNG = os.path.splitext(file1NameCSV)[0] + ".png"
         plt.savefig(file1NamePNG)
