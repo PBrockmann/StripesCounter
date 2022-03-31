@@ -854,6 +854,7 @@ class MainWindow(QMainWindow):
             + "          Scale length [pixels]: %s" %(self.scaleLength) + '\n'
             + "          Scale value [mm]: %.3f" %(self.scaleValue),
             loc='left', fontsize=10)
+        self.ax[0].set_adjustable('datalim')
 
         self.cboxInverseImage.setEnabled(True)
         self.labelAlpha.setEnabled(True)
