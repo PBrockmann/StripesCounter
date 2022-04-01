@@ -453,7 +453,7 @@ class MainWindow(QMainWindow):
                     print(self.mousepress)
                     if self.mousepress == "left":
                         print("double click left")
-                        print(event.artist.get_xdata(), event.artist.get_ydata())
+                        print(event.artist.get_offsets())
                     elif self.mousepress == "right":
                         print("double click right")
                     self.canvas.draw()
@@ -563,6 +563,7 @@ class MainWindow(QMainWindow):
                         ydata.append(cy)
                     self.line_object, = self.ax[0].plot(xdata, ydata, alpha=self.alpha_default, c='red', lw=2, picker=True, label="Profile")
                     self.line_object.set_pickradius(5)
+                    self.update_lineWithWidth()
                 self.canvas.draw()
                 self.drawProfile()
 
@@ -895,10 +896,12 @@ class MainWindow(QMainWindow):
 
         self.line_object.remove()
         self.line_object = None
-        self.lineWithWidth.remove()
-        self.lineWithWidth = None
-        self.peaks.remove()
-        self.peaks = None
+        if self.lineWithWidth != None:
+            self.lineWithWidth.remove()
+            self.lineWithWidth = None
+        if self.peaks ! = None:
+            self.peaks.remove()
+            self.peaks = None
         for p in list(self.ax[0].patches):
             p.remove()
         self.listLabelPoints = []

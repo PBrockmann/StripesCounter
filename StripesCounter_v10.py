@@ -266,7 +266,7 @@ class MainWindow(QMainWindow):
 
         self.kernelSize = 3 
         self.kernelOffset = 0
-        self.profileLinewidth = 2
+        self.profileLinewidth = 1
         self.peakutils_minDist = 1
         self.peakutils_thres = 125 
 
@@ -599,6 +599,7 @@ class MainWindow(QMainWindow):
                         ydata.append(cy)
                     self.line_object, = self.ax[0].plot(xdata, ydata, alpha=self.alpha_default, c='red', lw=2, picker=True)
                     self.line_object.set_pickradius(5)
+                    self.update_lineWithWidthList()
                 self.canvas.draw()
                 self.drawProfile()
 
