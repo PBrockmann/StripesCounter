@@ -21,7 +21,6 @@ try:
     from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
     from matplotlib.figure import Figure
     import matplotlib.patches as patches
-    from matplotlib.lines import Line2D
     import matplotlib.pyplot as plt
     
     from skimage.measure import profile_line
@@ -252,6 +251,7 @@ class MainWindow(QMainWindow):
 
         self.offset = [0,0]
         self.n = 0
+        self.mousepress = None
         self.listLabelPoints = []
 
         self.current_artist = None
@@ -421,22 +421,41 @@ class MainWindow(QMainWindow):
         if event.mouseevent.button != 1:   # https://stackoverflow.com/questions/29086662/matplotlib-pick-event-functionality
             return
 
+        if event.mouseevent.dblclick:
+           if self.mousepress == "left":
+               print("double click left")
+           elif self.mousepress == "right":
+               print("double click left")
+
         if self.current_artist is None:
             self.current_artist = event.artist
-            #print("pick ", self.current_artist)
-            if isinstance(event.artist, patches.Circle):
-                 x0, y0 = self.current_artist.center
-                 x1, y1 = event.mouseevent.xdata, event.mouseevent.ydata
-                 self.offset = [(x0 - x1), (y0 - y1)]
-                 event.artist.set_alpha(1.0)
-                 self.canvas.draw()
-            elif isinstance(event.artist, Line2D):
+            label = event.artist.get_label()
+            print("pick", label)
+            if label == "Profile":
                  xdata = event.artist.get_xdata()
                  ydata = event.artist.get_ydata()
                  x1, y1 = event.mouseevent.xdata, event.mouseevent.ydata
                  self.offset = xdata[0] - x1, ydata[0] - y1
                  event.artist.set_alpha(1.0)
                  self.canvas.draw()
+            elif label.startswith('Point'):
+                 x0, y0 = self.current_artist.center
+                 x1, y1 = event.mouseevent.xdata, event.mouseevent.ydata
+                 self.offset = [(x0 - x1), (y0 - y1)]
+                 event.artist.set_alpha(1.0)
+                 self.canvas.draw()
+            elif label.startswith('Peak'):
+                 print("pick", label, event.ind)
+                 if event.mouseevent.dblclick:
+                    print(self.mousepress)
+                    if self.mousepress == "left":
+                        print("double click left")
+                        print(event.artist.get_xdata(), event.artist.get_ydata())
+                    elif self.mousepress == "right":
+                        print("double click right")
+                    self.canvas.draw()
+
+	# https://stackoverflow.com/questions/53652627/how-to-distinguish-points-scatter-matplotlib-on-pick
 
     #------------------------------------------------------------------
     def on_motion(self, event):
@@ -472,20 +491,9 @@ class MainWindow(QMainWindow):
 
         #----------------------------------------------
         if self.current_artist != None:
+            label = self.current_artist.get_label()
             dx, dy = self.offset
-            if isinstance(self.current_artist, patches.Circle):
-                cx, cy =  event.xdata + dx, event.ydata + dy
-                self.current_artist.center = cx, cy
-                #print("moving", self.current_artist.get_label())
-                xdata = list(self.line_object.get_xdata())
-                ydata = list(self.line_object.get_ydata())
-                for i in range(0,len(xdata)): 
-                    if self.listLabelPoints[i] == self.current_artist.get_label():
-                        xdata[i] = cx
-                        ydata[i] = cy
-                        break
-                self.line_object.set_data(xdata, ydata)
-            elif isinstance(self.current_artist, Line2D):
+            if label == "Profile":
                 xdata = list(self.line_object.get_xdata())
                 ydata = list(self.line_object.get_ydata())
                 xdata0 = xdata[0]
@@ -498,6 +506,17 @@ class MainWindow(QMainWindow):
                     pointLabel = p.get_label()
                     i = self.listLabelPoints.index(pointLabel) 
                     p.center = xdata[i], ydata[i]
+            elif label.startswith('Point'):
+                cx, cy =  event.xdata + dx, event.ydata + dy
+                self.current_artist.center = cx, cy
+                xdata = list(self.line_object.get_xdata())
+                ydata = list(self.line_object.get_ydata())
+                for i in range(0,len(xdata)): 
+                    if self.listLabelPoints[i] == label:
+                        xdata[i] = cx
+                        ydata[i] = cy
+                        break
+                self.line_object.set_data(xdata, ydata)
             self.update_lineWithWidth()
             self.canvas.draw()
             self.drawProfile()
@@ -513,6 +532,11 @@ class MainWindow(QMainWindow):
     #------------------------------------------------------------------
     def on_press(self, event):
         self.press = True
+        if event.button == 3:
+            self.mousepress = "right"
+        elif event.button == 1:
+            self.mousepress = "left"
+        print('--->', self.mousepress)
         if event.inaxes == self.ax[0]:              # to zoom and pan in ax[0]
             self.cur_xlim = self.ax[0].get_xlim()
             self.cur_ylim = self.ax[0].get_ylim()
@@ -522,7 +546,7 @@ class MainWindow(QMainWindow):
             if len(self.listLabelPoints) < 2:
                 self.n = self.n+1
                 x, y = event.xdata, event.ydata
-                newPointLabel = "point"+str(self.n)
+                newPointLabel = "Point%d"%self.n
                 point_object = patches.Circle([x, y], radius=self.radius, color='red', fill=False, lw=2,
                         alpha=self.alpha_default, transform=self.ax[0].transData, label=newPointLabel)
                 point_object.set_picker(5)
@@ -535,7 +559,7 @@ class MainWindow(QMainWindow):
                         cx, cy = p.center
                         xdata.append(cx)
                         ydata.append(cy)
-                    self.line_object, = self.ax[0].plot(xdata, ydata, alpha=self.alpha_default, c='red', lw=2, picker=True)
+                    self.line_object, = self.ax[0].plot(xdata, ydata, alpha=self.alpha_default, c='red', lw=2, picker=True, label="Profile")
                     self.line_object.set_pickradius(5)
                 self.canvas.draw()
                 self.drawProfile()
@@ -851,8 +875,8 @@ class MainWindow(QMainWindow):
 
         line = LineString(points)
         x, y = line.xy
-        self.ax[0].plot(x, y, c='b', lw=2, alpha=self.alpha_default)
-        self.ax[0].scatter(x, y, c='b', alpha=self.alpha_default, s=10, zorder=10)
+        self.ax[0].plot([x[0], x[-1]], [y[0], y[-1]], c='b', lw=2, alpha=self.alpha_default, label="Segment%02d"%self.segmentNumb)
+        self.ax[0].scatter(x, y, c='b', alpha=self.alpha_default, s=10, picker=True, pickradius=5, label="PeaksSegment%02d"%self.segmentNumb)
 
         text_line.CurvedText(
             x=[xdata[0], xdata[1]],
