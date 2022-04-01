@@ -418,14 +418,17 @@ class MainWindow(QMainWindow):
     #------------------------------------------------------------------
     def on_pick(self, event):
 
-        if event.mouseevent.button != 1:   # https://stackoverflow.com/questions/29086662/matplotlib-pick-event-functionality
+        # https://stackoverflow.com/questions/29086662/matplotlib-pick-event-functionality
+        # filter because the scroll wheel is registered as a button
+        if event.mouseevent.button == 'down' or event.mouseevent.button == 'up':
+            #print("pick", event.mouseevent.button)
             return
 
         if event.mouseevent.dblclick:
            if self.mousepress == "left":
                print("double click left")
            elif self.mousepress == "right":
-               print("double click left")
+               print("double click right")
 
         if self.current_artist is None:
             self.current_artist = event.artist
@@ -536,7 +539,6 @@ class MainWindow(QMainWindow):
             self.mousepress = "right"
         elif event.button == 1:
             self.mousepress = "left"
-        print('--->', self.mousepress)
         if event.inaxes == self.ax[0]:              # to zoom and pan in ax[0]
             self.cur_xlim = self.ax[0].get_xlim()
             self.cur_ylim = self.ax[0].get_ylim()
@@ -776,6 +778,7 @@ class MainWindow(QMainWindow):
     def update_lineWithWidth(self):
         if self.lineWithWidth != None:
             self.lineWithWidth.remove()
+            self.lineWithWidth = None
         if self.profileLinewidth > 1:
             xdata = list(self.line_object.get_xdata())
             ydata = list(self.line_object.get_ydata())
@@ -889,6 +892,16 @@ class MainWindow(QMainWindow):
         )
 
         self.segmentNumb +=1
+
+        self.line_object.remove()
+        self.line_object = None
+        self.lineWithWidth.remove()
+        self.lineWithWidth = None
+        self.peaks.remove()
+        self.peaks = None
+        for p in list(self.ax[0].patches):
+            p.remove()
+        self.listLabelPoints = []
 
         self.canvas.draw()
 

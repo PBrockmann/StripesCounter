@@ -39,7 +39,7 @@ except:
     sys.exit()
 
 #======================================================
-version = "v10.91"
+version = "v10.92"
 maximumWidth = 250
 
 #======================================================
@@ -418,7 +418,10 @@ class MainWindow(QMainWindow):
     #------------------------------------------------------------------
     def on_pick(self, event):
 
-        if event.mouseevent.button != 1:   # https://stackoverflow.com/questions/29086662/matplotlib-pick-event-functionality
+        # https://stackoverflow.com/questions/29086662/matplotlib-pick-event-functionality
+        # filter because the scroll wheel is registered as a button
+        if event.mouseevent.button == 'down' or event.mouseevent.button == 'up':
+            #print("pick", event.mouseevent.button)
             return
 
         if self.current_artist is None:
