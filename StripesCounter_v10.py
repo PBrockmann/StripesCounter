@@ -39,7 +39,7 @@ except:
     sys.exit()
 
 #======================================================
-version = "v10.90"
+version = "v10.91"
 maximumWidth = 250
 
 #======================================================
@@ -91,8 +91,8 @@ class MainWindow(QMainWindow):
         self.labelBeta.setAlignment(Qt.AlignLeft)
         self.labelKernelSize = QLabel("Kernel size: " + str(self.kernelSize))
         self.labelKernelSize.setAlignment(Qt.AlignLeft)
-        self.labelProfilLinewidth = QLabel("Profil linewidth: " + str(self.profilLinewidth))
-        self.labelProfilLinewidth.setAlignment(Qt.AlignLeft)
+        self.labelProfileLinewidth = QLabel("Profile linewidth: " + str(self.profileLinewidth))
+        self.labelProfileLinewidth.setAlignment(Qt.AlignLeft)
         self.labelPeakUtils_minDist = QLabel("PeakUtils - Minimum distance: " + str(self.peakutils_minDist))
         self.labelPeakUtils_minDist.setAlignment(Qt.AlignLeft)
         self.labelPeakUtils_thres = QLabel("PeakUtils - Threshold: %d" % self.peakutils_thres)
@@ -126,14 +126,14 @@ class MainWindow(QMainWindow):
         self.mySliderKernelSize.setTickPosition(QSlider.TicksBelow)
         self.mySliderKernelSize.valueChanged[int].connect(self.changeValueKernelSize)
 
-        self.mySliderProfilLinewidth = QSlider(Qt.Horizontal, self)
-        self.mySliderProfilLinewidth.setMaximumWidth(maximumWidth)
-        self.mySliderProfilLinewidth.setMinimum(1)
-        self.mySliderProfilLinewidth.setMaximum(50)
-        self.mySliderProfilLinewidth.setValue(self.profilLinewidth)
-        self.mySliderProfilLinewidth.setTickInterval(1)
-        self.mySliderProfilLinewidth.setTickPosition(QSlider.TicksBelow)
-        self.mySliderProfilLinewidth.valueChanged[int].connect(self.changeValueProfilLinewidth)
+        self.mySliderProfileLinewidth = QSlider(Qt.Horizontal, self)
+        self.mySliderProfileLinewidth.setMaximumWidth(maximumWidth)
+        self.mySliderProfileLinewidth.setMinimum(1)
+        self.mySliderProfileLinewidth.setMaximum(50)
+        self.mySliderProfileLinewidth.setValue(self.profileLinewidth)
+        self.mySliderProfileLinewidth.setTickInterval(1)
+        self.mySliderProfileLinewidth.setTickPosition(QSlider.TicksBelow)
+        self.mySliderProfileLinewidth.valueChanged[int].connect(self.changeValueProfileLinewidth)
 
         self.mySliderPeakUtils_minDist = QSlider(Qt.Horizontal, self)
         self.mySliderPeakUtils_minDist.setMaximumWidth(maximumWidth)
@@ -153,13 +153,13 @@ class MainWindow(QMainWindow):
         self.mySliderPeakUtils_thres.setTickPosition(QSlider.TicksBelow)
         self.mySliderPeakUtils_thres.valueChanged[int].connect(self.changeValuePeakUtils_thres)
 
-        self.cboxPeaks = QCheckBox("Display peaks on image")
+        self.cboxPeaks = QCheckBox("Display peaks on current profile")
         self.cboxPeaks.setChecked(False)
         self.cboxPeaks.toggled.connect(self.toggled_cboxPeaks)
 
-        self.cboxReverseProfil = QCheckBox("Reverse profil")
-        self.cboxReverseProfil.setChecked(False)
-        self.cboxReverseProfil.toggled.connect(self.toggled_cboxReverseProfil)
+        self.cboxReverseProfile = QCheckBox("Reverse profile")
+        self.cboxReverseProfile.setChecked(False)
+        self.cboxReverseProfile.toggled.connect(self.toggled_cboxReverseProfile)
 
         #-----------------------
         #self.fig, self.ax = plt.subplots(nrows=2, figsize=(8,8), gridspec_kw={'height_ratios': [2, 1]})
@@ -214,8 +214,8 @@ class MainWindow(QMainWindow):
         layoutV2.addWidget(self.labelKernelSize)
         layoutV2.addWidget(self.mySliderKernelSize)
         layoutV2.addSpacing(1)
-        layoutV2.addWidget(self.labelProfilLinewidth)
-        layoutV2.addWidget(self.mySliderProfilLinewidth)
+        layoutV2.addWidget(self.labelProfileLinewidth)
+        layoutV2.addWidget(self.mySliderProfileLinewidth)
         layoutV2.addSpacing(1)
         layoutV2.addWidget(self.labelPeakUtils_minDist)
         layoutV2.addWidget(self.mySliderPeakUtils_minDist)
@@ -223,7 +223,7 @@ class MainWindow(QMainWindow):
         layoutV2.addWidget(self.labelPeakUtils_thres)
         layoutV2.addWidget(self.mySliderPeakUtils_thres)
         layoutV2.addWidget(self.cboxPeaks)
-        layoutV2.addWidget(self.cboxReverseProfil)
+        layoutV2.addWidget(self.cboxReverseProfile)
         layoutV2.addSpacing(5)
         layoutV2.addWidget(self.buttonDefineScaleValue)
         layoutV2.addWidget(self.buttonDefineScale)
@@ -266,13 +266,13 @@ class MainWindow(QMainWindow):
 
         self.kernelSize = 3 
         self.kernelOffset = 0
-        self.profilLinewidth = 2
+        self.profileLinewidth = 2
         self.peakutils_minDist = 1
         self.peakutils_thres = 125 
 
-        self.dist_profil = None
-        self.profil = None
-        self.profil_convolved = None
+        self.dist_profile = None
+        self.profile = None
+        self.profile_convolved = None
         self.indexes = None
         self.peaksCurve = None
         self.peaks = None
@@ -294,22 +294,22 @@ class MainWindow(QMainWindow):
         self.mySliderBeta.setEnabled(False)
         self.labelKernelSize.setEnabled(False)
         self.mySliderKernelSize.setEnabled(False)
-        self.labelProfilLinewidth.setEnabled(False)
-        self.mySliderProfilLinewidth.setEnabled(False)
+        self.labelProfileLinewidth.setEnabled(False)
+        self.mySliderProfileLinewidth.setEnabled(False)
         self.labelPeakUtils_thres.setEnabled(False)
         self.mySliderPeakUtils_thres.setEnabled(False)
         self.labelPeakUtils_minDist.setEnabled(False)
         self.cboxPeaks.setEnabled(False)
-        self.cboxReverseProfil.setEnabled(False)
+        self.cboxReverseProfile.setEnabled(False)
         self.mySliderPeakUtils_minDist.setEnabled(False)
         self.cboxPeaks.setChecked(False)
-        self.cboxReverseProfil.setChecked(False)
+        self.cboxReverseProfile.setChecked(False)
         self.buttonDefineScale.setEnabled(False)
         self.buttonDefineScaleValue.setEnabled(False)
         self.buttonSave.setEnabled(False)
 
         self.mySliderKernelSize.setValue(self.kernelSize)
-        self.mySliderProfilLinewidth.setValue(self.profilLinewidth)
+        self.mySliderProfileLinewidth.setValue(self.profileLinewidth)
         self.mySliderPeakUtils_minDist.setValue(self.peakutils_minDist)
         self.mySliderPeakUtils_thres.setValue(self.peakutils_thres)
 
@@ -322,7 +322,7 @@ class MainWindow(QMainWindow):
         self.labelAlpha.setText("Contrast level: " + str(self.alphaLevel))
         self.adjusted = cv2.convertScaleAbs(self.gray, alpha=self.alphaLevel, beta=self.betaLevel)
         self.image_object.set_data(self.adjusted)
-        self.drawProfil()
+        self.drawProfile()
         self.canvas.draw()
 
     #------------------------------------------------------------------
@@ -330,7 +330,7 @@ class MainWindow(QMainWindow):
         self.gray = cv2.bitwise_not(self.gray)
         self.adjusted = cv2.convertScaleAbs(self.gray, alpha=self.alphaLevel, beta=self.betaLevel)
         self.image_object.set_data(self.adjusted)
-        self.drawProfil()
+        self.drawProfile()
         self.canvas.draw()
 
     #------------------------------------------------------------------
@@ -339,7 +339,7 @@ class MainWindow(QMainWindow):
         self.labelBeta.setText("Brighness level: " + str(self.betaLevel))
         self.adjusted = cv2.convertScaleAbs(self.gray, alpha=self.alphaLevel, beta=self.betaLevel)
         self.image_object.set_data(self.adjusted)
-        self.drawProfil()
+        self.drawProfile()
         self.canvas.draw()
 
     #------------------------------------------------------------------
@@ -347,35 +347,35 @@ class MainWindow(QMainWindow):
         if value % 2 != 0:
             self.kernelSize = value
             self.labelKernelSize.setText("Kernel size: " + str(self.kernelSize))
-            self.drawProfil()
+            self.drawProfile()
 
     #------------------------------------------------------------------
-    def changeValueProfilLinewidth(self, value):
-        self.profilLinewidth= value
-        self.labelProfilLinewidth.setText("Profile linewidth: " + str(self.profilLinewidth))
+    def changeValueProfileLinewidth(self, value):
+        self.profileLinewidth= value
+        self.labelProfileLinewidth.setText("Profile linewidth: " + str(self.profileLinewidth))
         self.update_lineWithWidthList()
         self.canvas.draw()
-        self.drawProfil()
+        self.drawProfile()
 
     #------------------------------------------------------------------
     def changeValuePeakUtils_minDist(self, value):
         self.peakutils_minDist = value
         self.labelPeakUtils_minDist.setText("PeakUtils - Minimum distance: " + str(self.peakutils_minDist))
-        self.drawProfil()
+        self.drawProfile()
         
     #------------------------------------------------------------------
     def changeValuePeakUtils_thres(self, value):
         self.peakutils_thres = value
         self.labelPeakUtils_thres.setText("PeakUtils - Threshold: %d" % self.peakutils_thres)
-        self.drawProfil()
+        self.drawProfile()
 
     #------------------------------------------------------------------
     def toggled_cboxPeaks(self):
-        self.drawProfil()
+        self.drawProfile()
 
     #------------------------------------------------------------------
-    def toggled_cboxReverseProfil(self):
-        self.drawProfil()
+    def toggled_cboxReverseProfile(self):
+        self.drawProfile()
 
     #------------------------------------------------------------------
     def zoom(self, event):
@@ -442,7 +442,7 @@ class MainWindow(QMainWindow):
                             #print('--->', self.listLabelPoints)
                             self.line_object.set_data(xdata, ydata)
                             self.update_lineWithWidthList()
-                            self.drawProfil()
+                            self.drawProfile()
                             self.canvas.draw()
                 else:
                     x0, y0 = self.current_artist.center
@@ -483,7 +483,7 @@ class MainWindow(QMainWindow):
                         #if not pointInserted:
                             #print("Error: point not inserted, too far from line")
                             #point_object.remove()
-                        self.drawProfil()
+                        self.drawProfile()
                         self.canvas.draw()
                 else:
                     xdata = event.artist.get_xdata()
@@ -555,7 +555,7 @@ class MainWindow(QMainWindow):
                     p.center = xdata[i], ydata[i]
             self.update_lineWithWidthList()
             self.canvas.draw()
-            self.drawProfil()
+            self.drawProfile()
         elif event.inaxes == self.ax[0]:              # to zoom and pan in ax[0]
             dx = event.xdata - self.xpress
             dy = event.ydata - self.ypress
@@ -597,10 +597,10 @@ class MainWindow(QMainWindow):
                     self.line_object, = self.ax[0].plot(xdata, ydata, alpha=self.alpha_default, c='red', lw=2, picker=True)
                     self.line_object.set_pickradius(5)
                 self.canvas.draw()
-                self.drawProfil()
+                self.drawProfile()
 
     #------------------------------------------------------------------
-    def drawProfil(self):
+    def drawProfile(self):
         if self.line_object is None:
             return 
 
@@ -615,40 +615,40 @@ class MainWindow(QMainWindow):
             line = LineString(list(zip(xdata,ydata)))
 
             listEndSegment = [0]
-            self.profil =  np.array([]) 
-            self.profil_mx = np.array([])
-            self.profil_my = np.array([])
-            self.profil_segment = np.array([])
-            self.dist_profil = np.array([])
+            self.profile =  np.array([]) 
+            self.profile_mx = np.array([])
+            self.profile_my = np.array([])
+            self.profile_segment = np.array([])
+            self.dist_profile = np.array([])
             for i in range(0,len(xdata)-1):
                 #print("---", i, xdata[i], xdata[i+1])
-                profil_tmp = profile_line(self.adjusted, (ydata[i], xdata[i]), (ydata[i+1], xdata[i+1]),
-                                            order=0, mode='constant', cval=0, linewidth=self.profilLinewidth)
+                profile_tmp = profile_line(self.adjusted, (ydata[i], xdata[i]), (ydata[i+1], xdata[i+1]),
+                                            order=0, mode='constant', cval=0, linewidth=self.profileLinewidth)
 
-                profil_mx_tmp = profile_line(self.mx, (ydata[i], xdata[i]), (ydata[i+1], xdata[i+1]),
-                                            order=0, mode='constant', cval=0, linewidth=self.profilLinewidth)
-                profil_my_tmp = profile_line(self.my, (ydata[i], xdata[i]), (ydata[i+1], xdata[i+1]),
-                                            order=0, mode='constant', cval=0, linewidth=self.profilLinewidth)
+                profile_mx_tmp = profile_line(self.mx, (ydata[i], xdata[i]), (ydata[i+1], xdata[i+1]),
+                                            order=0, mode='constant', cval=0, linewidth=self.profileLinewidth)
+                profile_my_tmp = profile_line(self.my, (ydata[i], xdata[i]), (ydata[i+1], xdata[i+1]),
+                                            order=0, mode='constant', cval=0, linewidth=self.profileLinewidth)
 
-                self.profil = np.concatenate((self.profil, profil_tmp))
-                self.profil_mx = np.concatenate((self.profil_mx, profil_mx_tmp))
-                self.profil_my = np.concatenate((self.profil_my, profil_my_tmp))
-                self.profil_segment = np.concatenate((self.profil_segment, profil_mx_tmp*0 + i+1))	# store segment number
-                dist_profil_tmp = np.linspace(0, self.scalePixel*len(profil_tmp), num=len(profil_tmp))
+                self.profile = np.concatenate((self.profile, profile_tmp))
+                self.profile_mx = np.concatenate((self.profile_mx, profile_mx_tmp))
+                self.profile_my = np.concatenate((self.profile_my, profile_my_tmp))
+                self.profile_segment = np.concatenate((self.profile_segment, profile_mx_tmp*0 + i+1))	# store segment number
+                dist_profile_tmp = np.linspace(0, self.scalePixel*len(profile_tmp), num=len(profile_tmp))
                 if i > 0:
                     # add last point of previous segment
-                    self.dist_profil = np.concatenate((self.dist_profil, dist_profil_tmp + self.dist_profil[-1]))
+                    self.dist_profile = np.concatenate((self.dist_profile, dist_profile_tmp + self.dist_profile[-1]))
                 else:
-                    self.dist_profil = np.concatenate((self.dist_profil, dist_profil_tmp))
-                listEndSegment.append(self.dist_profil[-1])
+                    self.dist_profile = np.concatenate((self.dist_profile, dist_profile_tmp))
+                listEndSegment.append(self.dist_profile[-1])
 
             self.ax[1].set_visible(True)
             self.ax[1].clear()
             self.ax[1].set_facecolor('whitesmoke')
             
-            if self.cboxReverseProfil.isChecked():
-            	self.profil = 255 - self.profil
-            self.ax[1].plot(self.dist_profil, self.profil, c='red', lw=1, alpha=0.8)
+            if self.cboxReverseProfile.isChecked():
+            	self.profile = 255 - self.profile
+            self.ax[1].plot(self.dist_profile, self.profile, c='red', lw=1, alpha=0.8)
 
             for x in listEndSegment:
                 self.ax[1].axvline(x=x, linestyle='dashed', color='red', alpha=0.8)
@@ -657,14 +657,14 @@ class MainWindow(QMainWindow):
             self.kernelOffset = int(self.kernelSize/2)
             
             # use mode='same' and put boundaries values to np.nan
-            self.profil_convolved = np.convolve(self.profil, kernel, mode='same')
-            self.profil_convolved[0:self.kernelOffset] = self.profil_convolved[-self.kernelOffset:] = np.nan
+            self.profile_convolved = np.convolve(self.profile, kernel, mode='same')
+            self.profile_convolved[0:self.kernelOffset] = self.profile_convolved[-self.kernelOffset:] = np.nan
 
-            self.ax[1].plot(self.dist_profil, self.profil_convolved, c='b', lw=1, alpha=0.8)
+            self.ax[1].plot(self.dist_profile, self.profile_convolved, c='b', lw=1, alpha=0.8)
             
             # https://peakutils.readthedocs.io/en/latest/reference.html
-            self.indexes = peakutils.indexes(self.profil_convolved, thres=self.peakutils_thres, thres_abs=True, min_dist=self.peakutils_minDist)
-            self.peaksCurve = self.ax[1].scatter(self.dist_profil[self.indexes], self.profil_convolved[self.indexes], c='b', s=10)
+            self.indexes = peakutils.indexes(self.profile_convolved, thres=self.peakutils_thres, thres_abs=True, min_dist=self.peakutils_minDist)
+            self.peaksCurve = self.ax[1].scatter(self.dist_profile[self.indexes], self.profile_convolved[self.indexes], c='b', s=10)
 
             if self.peaks != None:
                 self.peaks.remove()
@@ -673,7 +673,7 @@ class MainWindow(QMainWindow):
             if self.cboxPeaks.isChecked():
             	points = []
             	for i in self.indexes:
-                	point = Point(self.profil_mx[i], self.profil_my[i])
+                	point = Point(self.profile_mx[i], self.profile_my[i])
                 	# Closest point on the line
                 	newPoint = line.interpolate(line.project(point))
                 	points.append(newPoint)
@@ -684,9 +684,9 @@ class MainWindow(QMainWindow):
             stripesNb = len(self.indexes)
             self.line1 = "Number of stripes: %3d" %(stripesNb)
             if stripesNb > 0:
-                stripesDist = self.dist_profil[self.indexes[-1]]-self.dist_profil[self.indexes[0]]
+                stripesDist = self.dist_profile[self.indexes[-1]]-self.dist_profile[self.indexes[0]]
                 self.line2 = "Length of stripes: %.5f  (first: %.5f, last: %.5f)" \
-                                %(stripesDist, self.dist_profil[self.indexes[0]], self.dist_profil[self.indexes[-1]])
+                                %(stripesDist, self.dist_profile[self.indexes[0]], self.dist_profile[self.indexes[-1]])
                 self.line3 = "Growth stripe rate (m/stripe): %.5f" %(1000*stripesDist/stripesNb)
             else:
                 self.line2 = ""
@@ -699,14 +699,14 @@ class MainWindow(QMainWindow):
 
             self.labelKernelSize.setEnabled(True)
             self.mySliderKernelSize.setEnabled(True)
-            self.labelProfilLinewidth.setEnabled(True)
-            self.mySliderProfilLinewidth.setEnabled(True)
+            self.labelProfileLinewidth.setEnabled(True)
+            self.mySliderProfileLinewidth.setEnabled(True)
             self.labelPeakUtils_minDist.setEnabled(True)
             self.mySliderPeakUtils_minDist.setEnabled(True)
             self.labelPeakUtils_thres.setEnabled(True)
             self.mySliderPeakUtils_thres.setEnabled(True)
             self.cboxPeaks.setEnabled(True)
-            self.cboxReverseProfil.setEnabled(True)
+            self.cboxReverseProfile.setEnabled(True)
             self.buttonDefineScaleValue.setEnabled(True)
             self.buttonDefineScale.setEnabled(True)
             self.buttonSave.setEnabled(True)
@@ -794,7 +794,7 @@ class MainWindow(QMainWindow):
             + "          Scale value [mm]: %.3f" %(self.scaleValue),
             loc='left', fontsize=10)
         self.scaleValue_object.set_text("   %.3f mm" %(self.scaleValue))
-        self.drawProfil()
+        self.drawProfile()
 
     #------------------------------------------------------------------
     def defineScale(self):
@@ -815,19 +815,19 @@ class MainWindow(QMainWindow):
             self.scale_object[0].set_data([point1Scale[0], point2Scale[0]],
                                           [point1Scale[1], point2Scale[1]])
         self.scaleValue_object.set_position((point1Scale[0], point1Scale[1]))
-        self.drawProfil()
+        self.drawProfile()
 
     #------------------------------------------------------------------
     def update_lineWithWidthList(self):
         for line in self.lineWithWidthList:
             line.remove()
         self.lineWithWidthList = []
-        if self.profilLinewidth > 1:
+        if self.profileLinewidth > 1:
             xdata = list(self.line_object.get_xdata())
             ydata = list(self.line_object.get_ydata())
             for i in range(len(xdata)-1):
                 line = LineString([(xdata[i], ydata[i]), (xdata[i+1], ydata[i+1])])
-                dilated = line.buffer(self.profilLinewidth/2., cap_style=2, join_style=1)
+                dilated = line.buffer(self.profileLinewidth/2., cap_style=2, join_style=1)
                 line1, = self.ax[0].plot(*dilated.exterior.xy, alpha=self.alpha_default, c='red', lw=2)
                 self.lineWithWidthList.append(line1)
         
@@ -881,7 +881,7 @@ class MainWindow(QMainWindow):
         file1.write("# Contrast level: %.1f\n" %(self.alphaLevel))
         file1.write("# Brightness level: %d\n" %(self.betaLevel))
         file1.write("# Kernel size: %d\n" %(self.kernelSize))
-        file1.write("# Profil linewidth: %d\n" %(self.profilLinewidth))
+        file1.write("# Profile linewidth: %d\n" %(self.profileLinewidth))
         file1.write("# PeakUtils - Minimum distance: %d\n" %(self.peakutils_minDist))
         file1.write("# PeakUtils - Threshold: %d\n" %(self.peakutils_thres))
         xdata = list(self.line_object.get_xdata())
@@ -892,14 +892,14 @@ class MainWindow(QMainWindow):
         file1.write("# " + self.line1 + '\n# ' + self.line2 + '\n# ' + self.line3 + '\n')
         file1.write("#================================================\n")
         file1.write("n,xpos,ypos1,ypos2,peak,segment\n")
-        profil_convolvedFilled = np.nan_to_num(self.profil_convolved , nan=-999)
-        for i,v in enumerate(self.dist_profil):
+        profile_convolvedFilled = np.nan_to_num(self.profile_convolved , nan=-999)
+        for i,v in enumerate(self.dist_profile):
             if i in self.indexes:
                 file1.write("%d,%.7f,%.7f,%.7f,%d,%d\n" 
-                    %(i+1, self.dist_profil[i], self.profil[i], profil_convolvedFilled[i], 1, self.profil_segment[i]))
+                    %(i+1, self.dist_profile[i], self.profile[i], profile_convolvedFilled[i], 1, self.profile_segment[i]))
             else:
                 file1.write("%d,%.7f,%.7f,%.7f,%d,%d\n" 
-                    %(i+1, self.dist_profil[i], self.profil[i], profil_convolvedFilled[i], 0, self.profil_segment[i]))
+                    %(i+1, self.dist_profile[i], self.profile[i], profile_convolvedFilled[i], 0, self.profile_segment[i]))
         file1.close()
         file1NamePNG = os.path.splitext(file1NameCSV)[0] + ".png"
         plt.savefig(file1NamePNG)
@@ -912,7 +912,7 @@ class MainWindow(QMainWindow):
         text_line.CurvedText(
             x=[xdata[0], xdata[-1]],
             y=[ydata[0], ydata[-1]],
-            text="File {}".format("%02d" %self.counterFilename),
+            text="File %02d"%self.counterFilename,
             va='bottom',
             axes=self.ax[0],
             alpha=0.5,
@@ -941,19 +941,19 @@ class MainWindow(QMainWindow):
          * Pan the image from a mouse click
          * Zoom in or out with wheel zoom (or 2 fingers pad actions)
          * Enhance the image from brightness and contrast sliders
-         * Create a profil line by double clicking
-         * At the 2nd point, the profil to be extracted is drawn as a red line
-         * The profil of the image is drawn corresponding to the profil line 
-         * Add segments to the profil line by double clicking on it
+         * Create a profile line by double clicking
+         * At the 2nd point, the profile to be extracted is drawn as a red line
+         * The profile of the image is drawn corresponding to the profile line 
+         * Add segments to the profile line by double clicking on it
                - left double clicking to add a control point
                - right double clicking to remove a control point 
-         * Number of peaks (stripes) are counted from the smoothed profil
+         * Number of peaks (stripes) are counted from the smoothed profile
          * Adapt various parameters for peak dectection and smoothing
-         * Move, modify the profil line and control points if needed
-         * Control the width of the profil line
-         * Inspect detected peaks with a mouse over from image or profil 
+         * Move, modify the profile line and control points if needed
+         * Control the width of the profile line
+         * Inspect detected peaks with a mouse over from image or profile 
          * Define new scale and scale value if needed
-         * Save the image and the data points, visualize the extracted profil
+         * Save the image and the data points, visualize the extracted profile
 
          * Developped by Patrick Brockmann (LSCE)
         """
