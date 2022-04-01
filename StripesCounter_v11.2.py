@@ -186,6 +186,10 @@ class MainWindow(QMainWindow):
         self.buttonDefineScale.setMaximumWidth(maximumWidth)
         self.buttonDefineScale.clicked.connect(self.defineScale)
 
+        self.buttonExtract = QPushButton('Extract peaks')
+        self.buttonExtract.setMaximumWidth(maximumWidth)
+        self.buttonExtract.clicked.connect(self.extract)
+
         self.buttonSave = QPushButton('Save data as CSV and image as PNG')
         self.buttonSave.setMaximumWidth(maximumWidth)
         self.buttonSave.clicked.connect(self.save)
@@ -221,6 +225,7 @@ class MainWindow(QMainWindow):
         layoutV2.addSpacing(5)
         layoutV2.addWidget(self.buttonDefineScaleValue)
         layoutV2.addWidget(self.buttonDefineScale)
+        layoutV2.addWidget(self.buttonExtract)
         layoutV2.addWidget(self.buttonSave)
 
         layoutH.addLayout(layoutV1)
@@ -271,6 +276,7 @@ class MainWindow(QMainWindow):
         self.peaks = None
         self.peakHover0 = None
         self.peakHover1 = None
+        self.segmentNumb = 1
 
         self.line1 = self.line2 = self.line3 = None
         self.counterFilename = 1
@@ -299,6 +305,7 @@ class MainWindow(QMainWindow):
         self.cboxReverseProfil.setChecked(False)
         self.buttonDefineScale.setEnabled(False)
         self.buttonDefineScaleValue.setEnabled(False)
+        self.buttonExtract.setEnabled(False)
         self.buttonSave.setEnabled(False)
 
         self.mySliderKernelSize.setValue(self.kernelSize)
@@ -546,7 +553,7 @@ class MainWindow(QMainWindow):
 
             xdata = list(self.line_object.get_xdata())
             ydata = list(self.line_object.get_ydata())
-            line = LineString(list(zip(xdata,ydata)))
+            lineString = LineString([(xdata[0], ydata[0]), (xdata[1], ydata[1])])
 
             self.profil =  np.array([]) 
             self.profil_mx = np.array([])
@@ -562,7 +569,7 @@ class MainWindow(QMainWindow):
             self.profil_my = profile_line(self.my, (ydata[0], xdata[0]), (ydata[1], xdata[1]),
                                         order=0, mode='constant', cval=0, linewidth=self.profilLinewidth)
 
-            self.profil_segment = self.profil_mx*0 + 1	# store segment number # a revoir
+            self.profil_segment = self.profil_mx*0 + self.segmentNumb 	# store segment number
             self.dist_profil = np.linspace(0, self.scalePixel*len(self.profil), num=len(self.profil))
 
             self.ax[1].set_visible(True)
@@ -573,7 +580,8 @@ class MainWindow(QMainWindow):
             	self.profil = 255 - self.profil
             self.ax[1].plot(self.dist_profil, self.profil, c='red', lw=1, alpha=0.8)
 
-            self.ax[1].axvline(x=[0,self.dist_profil[-1]] , linestyle='dashed', color='red', alpha=0.8)
+            self.ax[1].axvline(x=0 , linestyle='dashed', color='red', alpha=0.8)
+            self.ax[1].axvline(x=self.dist_profil[-1] , linestyle='dashed', color='red', alpha=0.8)
             
             kernel = np.ones(self.kernelSize) / self.kernelSize
             self.kernelOffset = int(self.kernelSize/2)
@@ -597,7 +605,7 @@ class MainWindow(QMainWindow):
             	for i in self.indexes:
                 	point = Point(self.profil_mx[i], self.profil_my[i])
                 	# Closest point on the line
-                	newPoint = line.interpolate(line.project(point))
+                	newPoint = lineString.interpolate(lineString.project(point))
                 	points.append(newPoint)
             	xs = [point.x for point in points]
             	ys = [point.y for point in points]
@@ -631,6 +639,7 @@ class MainWindow(QMainWindow):
             self.cboxReverseProfil.setEnabled(True)
             self.buttonDefineScaleValue.setEnabled(True)
             self.buttonDefineScale.setEnabled(True)
+            self.buttonExtract.setEnabled(True)
             self.buttonSave.setEnabled(True)
 
             self.canvas.draw()
@@ -838,6 +847,9 @@ class MainWindow(QMainWindow):
             color="blue"
         )
         self.canvas.draw()
+
+    #------------------------------------------------------------------
+    def extract(self):
 
     #------------------------------------------------------------------
     def openFileNameDialog(self):
