@@ -263,7 +263,7 @@ class MainWindow(QMainWindow):
 
         self.kernelSize = 3 
         self.kernelOffset = 0
-        self.profileLinewidth = 2
+        self.profileLinewidth = 1
         self.peakutils_minDist = 1
         self.peakutils_thres = 125 
 
@@ -424,11 +424,11 @@ class MainWindow(QMainWindow):
             #print("pick", event.mouseevent.button)
             return
 
-        if event.mouseevent.dblclick:
-           if self.mousepress == "left":
-               print("double click left")
-           elif self.mousepress == "right":
-               print("double click right")
+        #if event.mouseevent.dblclick:
+        #   if self.mousepress == "left":
+        #       print("double click left")
+        #   elif self.mousepress == "right":
+        #       print("double click right")
 
         if self.current_artist is None:
             self.current_artist = event.artist
@@ -450,12 +450,14 @@ class MainWindow(QMainWindow):
             elif label.startswith('Peak'):
                  print("pick", label, event.ind)
                  if event.mouseevent.dblclick:
-                    print(self.mousepress)
+                    posPeaks = event.artist.get_offsets()
+                    ind = event.ind
                     if self.mousepress == "left":
                         print("double click left")
-                        print(event.artist.get_offsets())
                     elif self.mousepress == "right":
                         print("double click right")
+                        print(posPeaks[ind])
+                        event.artist.set_offsets(np.delete(posPeaks, ind, axis=0))
                     self.canvas.draw()
 
 	# https://stackoverflow.com/questions/53652627/how-to-distinguish-points-scatter-matplotlib-on-pick
@@ -598,8 +600,8 @@ class MainWindow(QMainWindow):
             self.profile_segment = self.profile_mx*0 + self.segmentNumb 	# store segment number
             self.dist_profile = np.linspace(0, self.scalePixel*len(self.profile), num=len(self.profile))
 
-            self.ax[1].set_visible(True)
             self.ax[1].clear()
+            self.ax[1].set_visible(True)
             self.ax[1].set_facecolor('whitesmoke')
             
             if self.cboxReverseProfile.isChecked():
@@ -792,8 +794,8 @@ class MainWindow(QMainWindow):
         self.initValues()
         self.initInterface()
 
-        self.ax[0].set_visible(True)
         self.ax[0].clear()
+        self.ax[0].set_visible(True)
 
         img = cv2.imread(self.imageFileName)
         (self.mx, self.my) = np.meshgrid(np.arange(img.shape[1]), np.arange(img.shape[0]))
@@ -899,12 +901,15 @@ class MainWindow(QMainWindow):
         if self.lineWithWidth != None:
             self.lineWithWidth.remove()
             self.lineWithWidth = None
-        if self.peaks ! = None:
+        if self.peaks != None:
             self.peaks.remove()
             self.peaks = None
         for p in list(self.ax[0].patches):
             p.remove()
         self.listLabelPoints = []
+        self.ax[1].clear
+        self.ax[1].set_visible(False)
+        self.buttonExtract.setEnabled(False)
 
         self.canvas.draw()
 
