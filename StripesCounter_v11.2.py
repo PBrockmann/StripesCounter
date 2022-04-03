@@ -274,9 +274,12 @@ class MainWindow(QMainWindow):
         self.indexes = None
         self.peaksCurve = None
         self.peaks = None
-        self.peakHover0 = None
-        self.peakHover1 = None
-        self.segmentNumb = 1
+        self.peakOver0 = None
+        self.peakOver1 = None
+        self.segmentNumb = 0
+        self.segment = None
+        self.peaksExtracted = None
+        self.peakExtractedOver = None
 
         self.line1 = self.line2 = self.line3 = None
         self.counterFilename = 1
@@ -418,6 +421,11 @@ class MainWindow(QMainWindow):
     #------------------------------------------------------------------
     def on_pick(self, event):
 
+        if event.mouseevent.button == 3:
+            self.mousepress = "right"
+        elif event.mouseevent.button == 1:
+            self.mousepress = "left"
+
         # https://stackoverflow.com/questions/29086662/matplotlib-pick-event-functionality
         # filter because the scroll wheel is registered as a button
         if event.mouseevent.button == 'down' or event.mouseevent.button == 'up':
@@ -433,7 +441,7 @@ class MainWindow(QMainWindow):
         if self.current_artist is None:
             self.current_artist = event.artist
             label = event.artist.get_label()
-            print("pick", label)
+            #print("pick", label)
             if label == "Profile":
                  xdata = event.artist.get_xdata()
                  ydata = event.artist.get_ydata()
@@ -447,34 +455,33 @@ class MainWindow(QMainWindow):
                  self.offset = [(x0 - x1), (y0 - y1)]
                  event.artist.set_alpha(1.0)
                  self.canvas.draw()
-            elif label.startswith('Peak'):
-                 print("pick", label, event.ind)
-                 if event.mouseevent.dblclick:
-                    posPeaks = event.artist.get_offsets()
-                    ind = event.ind
-                    if self.mousepress == "left":
-                        print("double click left")
-                    elif self.mousepress == "right":
-                        print("double click right")
-                        print(posPeaks[ind])
-                        event.artist.set_offsets(np.delete(posPeaks, ind, axis=0))
+            elif label == 'Segment%02d'%self.segmentNumb:
+                 if self.mousepress == "left":
+                    xdata = list(self.segment.get_xdata())
+                    ydata = list(self.segment.get_ydata())
+                    lineString = LineString([(xdata[0], ydata[0]), (xdata[1], ydata[1])])
+                    point = Point(event.mouseevent.xdata, event.mouseevent.ydata)
+                    # Closest point on the line
+                    newPoint = lineString.interpolate(lineString.project(point))
+                    posPeaks = self.peaksExtracted.get_offsets()
+                    newPosPeaks = np.concatenate([posPeaks, np.array(newPoint.coords, ndmin=2)])
+                    self.peaksExtracted.set_offsets(newPosPeaks)
                     self.canvas.draw()
-
-	# https://stackoverflow.com/questions/53652627/how-to-distinguish-points-scatter-matplotlib-on-pick
 
     #------------------------------------------------------------------
     def on_motion(self, event):
         #----------------------------------------------
-        # display hover scatter points when mouse passes over a peak
-        if self.peakHover0 != None:
-            self.peakHover0.remove()
-            self.peakHover0 = None
+        if self.peakOver0 != None:
+            self.peakOver0.remove()
+            self.peakOver0 = None
             self.canvas.draw()
-        if self.peakHover1 != None:
-            self.peakHover1.remove()
-            self.peakHover1 = None
+        if self.peakOver1 != None:
+            self.peakOver1.remove()
+            self.peakOver1 = None
             self.canvas.draw()
 
+        #----------------------------------------------
+        # display over scatter points when mouse passes over a peak
         cont = False
         if event.inaxes == self.ax[0] and self.peaks != None and self.cboxPeaks.isChecked():
             cont, ind = self.peaks.contains(event)
@@ -483,11 +490,24 @@ class MainWindow(QMainWindow):
         if cont and self.peaks != None:
             i = ind["ind"][0]
             pos = self.peaks.get_offsets()[i]
-            self.peakHover0 = self.ax[0].scatter(pos[0], pos[1],
+            self.peakOver0 = self.ax[0].scatter(pos[0], pos[1],
                                                  c='yellow', s=10, zorder=12)
             pos = self.peaksCurve.get_offsets()[i]
-            self.peakHover1 = self.ax[1].scatter(pos[0], pos[1],
+            self.peakOver1 = self.ax[1].scatter(pos[0], pos[1],
                                                  c='yellow', s=200, edgecolors='b', lw=1, alpha=0.8, zorder=0)
+            self.canvas.draw()
+
+        #----------------------------------------------
+        if event.inaxes == self.ax[0] and self.peaksExtracted != None:
+            if self.peakExtractedOver != None:
+               self.peakExtractedOver.remove()
+               self.peakExtractedOver = None
+            cont, ind = self.peaksExtracted.contains(event)
+            if cont:
+               i = ind["ind"][0]
+               pos = self.peaksExtracted.get_offsets()[i]
+               self.peakExtractedOver = self.ax[0].scatter(pos[0], pos[1], marker="o", 
+                                                 c='yellow', s=30, zorder=12)
             self.canvas.draw()
 
         #----------------------------------------------
@@ -552,7 +572,7 @@ class MainWindow(QMainWindow):
                 x, y = event.xdata, event.ydata
                 newPointLabel = "Point%d"%self.n
                 point_object = patches.Circle([x, y], radius=self.radius, color='red', fill=False, lw=2,
-                        alpha=self.alpha_default, transform=self.ax[0].transData, label=newPointLabel)
+                                              alpha=self.alpha_default, transform=self.ax[0].transData, label=newPointLabel)
                 point_object.set_picker(5)
                 self.ax[0].add_patch(point_object)
                 self.listLabelPoints.append(newPointLabel)
@@ -563,11 +583,25 @@ class MainWindow(QMainWindow):
                         cx, cy = p.center
                         xdata.append(cx)
                         ydata.append(cy)
-                    self.line_object, = self.ax[0].plot(xdata, ydata, alpha=self.alpha_default, c='red', lw=2, picker=True, label="Profile")
-                    self.line_object.set_pickradius(5)
+                    self.line_object, = self.ax[0].plot(xdata, ydata, alpha=self.alpha_default, c='red', lw=2, 
+                                                        picker=True, pickradius=5, label="Profile")
                     self.update_lineWithWidth()
                 self.canvas.draw()
                 self.drawProfile()
+
+        #----------------------------------------------
+        if event.inaxes == self.ax[0] and self.peaksExtracted != None:
+           cont, ind = self.peaksExtracted.contains(event)
+           if cont:
+              if self.mousepress == "right":
+                 if self.peakExtractedOver != None:
+                    self.peakExtractedOver.remove()
+                    self.peakExtractedOver = None
+                 i = ind["ind"][0]
+                 posPeaks = self.peaksExtracted.get_offsets()
+                 newPosPeaks = np.delete(posPeaks, i, axis=0)
+                 self.peaksExtracted.set_offsets(newPosPeaks)
+                 self.canvas.draw()
 
     #------------------------------------------------------------------
     def drawProfile(self):
@@ -881,20 +915,21 @@ class MainWindow(QMainWindow):
 
         line = LineString(points)
         x, y = line.xy
-        self.ax[0].plot([x[0], x[-1]], [y[0], y[-1]], c='b', lw=2, alpha=self.alpha_default, label="Segment%02d"%self.segmentNumb)
-        self.ax[0].scatter(x, y, c='b', alpha=self.alpha_default, s=10, picker=True, pickradius=5, label="PeaksSegment%02d"%self.segmentNumb)
+        self.segmentNumb +=1
+        self.segment, = self.ax[0].plot([x[0], x[-1]], [y[0], y[-1]], c='b', lw=2, alpha=self.alpha_default, zorder=0,
+                                        picker=True, pickradius=5, label='Segment%02d'%self.segmentNumb)
+        self.peaksExtracted = self.ax[0].scatter(x, y, c='b', marker="o", alpha=self.alpha_default, s=30, zorder=12,
+                                                 label='PeaksSegment%02d'%self.segmentNumb)
 
         text_line.CurvedText(
             x=[xdata[0], xdata[1]],
             y=[ydata[0], ydata[1]],
-            text="Segment %02d"%self.segmentNumb,
+            text='Segment %02d'%self.segmentNumb,
             va='bottom',
             axes=self.ax[0],
             alpha=self.alpha_default,
             color='blue'
         )
-
-        self.segmentNumb +=1
 
         self.line_object.remove()
         self.line_object = None
@@ -907,6 +942,7 @@ class MainWindow(QMainWindow):
         for p in list(self.ax[0].patches):
             p.remove()
         self.listLabelPoints = []
+        self.n = 0
         self.ax[1].clear
         self.ax[1].set_visible(False)
         self.buttonExtract.setEnabled(False)
