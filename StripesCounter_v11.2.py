@@ -465,6 +465,13 @@ class MainWindow(QMainWindow):
                     newPoint = lineString.interpolate(lineString.project(point))
                     posPeaks = self.peaksExtracted.get_offsets()
                     newPosPeaks = np.concatenate([posPeaks, np.array(newPoint.coords, ndmin=2)])
+                    # sort peaks along the segment after peak add
+                    posDistance = []
+                    for p in newPosPeaks:
+                        distance = Point(xdata[0], ydata[0]).distance(Point(p))
+                        posDistance.append(distance)
+                    sortIndices = np.argsort(posDistance)
+                    newPosPeaks = newPosPeaks[sortIndices]
                     self.peaksExtracted.set_offsets(newPosPeaks)
                     self.canvas.draw()
 
@@ -505,6 +512,7 @@ class MainWindow(QMainWindow):
             cont, ind = self.peaksExtracted.contains(event)
             if cont:
                i = ind["ind"][0]
+               #print("peak", i)
                pos = self.peaksExtracted.get_offsets()[i]
                self.peakExtractedOver = self.ax[0].scatter(pos[0], pos[1], marker="o", 
                                                  c='yellow', s=30, zorder=12)
