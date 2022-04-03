@@ -161,9 +161,12 @@ class MainWindow(QMainWindow):
         self.cboxReverseProfile.toggled.connect(self.toggled_cboxReverseProfile)
 
         #-----------------------
-        self.fig, self.ax = plt.subplots(nrows=2, figsize=(8,8))
-        self.fig.tight_layout()
-        self.fig.subplots_adjust(top=0.9, bottom=0.15)
+        #self.fig, self.ax = plt.subplots(nrows=2, figsize=(8,8))
+        #self.fig.tight_layout()
+        #self.fig.subplots_adjust(top=0.9, bottom=0.15)
+        self.fig = plt.figure(figsize=(8,8))
+        self.ax0 = self.fig.add_axes([0.06, 0.40, 0.90, 0.52])
+        self.ax1 = self.fig.add_axes([0.06, 0.12, 0.90, 0.22])
 
         self.canvas = FigureCanvas(self.fig)
         # https://github.com/matplotlib/matplotlib/issues/707/
@@ -316,8 +319,8 @@ class MainWindow(QMainWindow):
         self.mySliderPeakUtils_minDist.setValue(self.peakutils_minDist)
         self.mySliderPeakUtils_thres.setValue(self.peakutils_thres)
 
-        self.ax[0].set_visible(False)
-        self.ax[1].set_visible(False)
+        self.ax0.set_visible(False)
+        self.ax1.set_visible(False)
 
     #------------------------------------------------------------------
     def changeValueAlpha(self, value):
@@ -382,11 +385,11 @@ class MainWindow(QMainWindow):
 
     #------------------------------------------------------------------
     def zoom(self, event):
-        if event.inaxes == self.ax[0]:              # to zoom and pan in ax[0]
+        if event.inaxes == self.ax0:              # to zoom and pan in ax[0]
             # https://stackoverflow.com/questions/11551049/matplotlib-plot-zooming-with-scroll-wheel
             scale_zoom = 1.2
-            cur_xlim = self.ax[0].get_xlim()
-            cur_ylim = self.ax[0].get_ylim()
+            cur_xlim = self.ax0.get_xlim()
+            cur_ylim = self.ax0.get_ylim()
             xdata = event.xdata # get event x location
             ydata = event.ydata # get event y location
             if event.button == 'up':
@@ -403,8 +406,8 @@ class MainWindow(QMainWindow):
             new_height = (cur_ylim[1] - cur_ylim[0]) * scale_factor
             relx = (cur_xlim[1] - xdata)/(cur_xlim[1] - cur_xlim[0])
             rely = (cur_ylim[1] - ydata)/(cur_ylim[1] - cur_ylim[0])
-            self.ax[0].set_xlim([xdata - new_width * (1-relx), xdata + new_width * (relx)])
-            self.ax[0].set_ylim([ydata - new_height * (1-rely), ydata + new_height * (rely)])
+            self.ax0.set_xlim([xdata - new_width * (1-relx), xdata + new_width * (relx)])
+            self.ax0.set_ylim([ydata - new_height * (1-rely), ydata + new_height * (rely)])
 
             self.canvas.draw()
 
@@ -414,7 +417,7 @@ class MainWindow(QMainWindow):
         self.press = False
         if self.line_object != None:
             self.line_object.set_alpha(self.alpha_default)
-        for p in list(self.ax[0].patches):
+        for p in list(self.ax0.patches):
             p.set_alpha(self.alpha_default)
         self.canvas.draw()
 
@@ -490,22 +493,22 @@ class MainWindow(QMainWindow):
         #----------------------------------------------
         # display over scatter points when mouse passes over a peak
         cont = False
-        if event.inaxes == self.ax[0] and self.peaks != None and self.cboxPeaks.isChecked():
+        if event.inaxes == self.ax0 and self.peaks != None and self.cboxPeaks.isChecked():
             cont, ind = self.peaks.contains(event)
-        elif event.inaxes == self.ax[1]:
+        elif event.inaxes == self.ax1:
             cont, ind = self.peaksCurve.contains(event)
         if cont and self.peaks != None:
             i = ind["ind"][0]
             pos = self.peaks.get_offsets()[i]
-            self.peakOver0 = self.ax[0].scatter(pos[0], pos[1],
+            self.peakOver0 = self.ax0.scatter(pos[0], pos[1],
                                                  c='yellow', s=10, zorder=12)
             pos = self.peaksCurve.get_offsets()[i]
-            self.peakOver1 = self.ax[1].scatter(pos[0], pos[1],
+            self.peakOver1 = self.ax1.scatter(pos[0], pos[1],
                                                  c='yellow', s=200, edgecolors='b', lw=1, alpha=0.8, zorder=0)
             self.canvas.draw()
 
         #----------------------------------------------
-        if event.inaxes == self.ax[0] and self.peaksExtracted != None:
+        if event.inaxes == self.ax0 and self.peaksExtracted != None:
             if self.peakExtractedOver != None:
                self.peakExtractedOver.remove()
                self.peakExtractedOver = None
@@ -514,7 +517,7 @@ class MainWindow(QMainWindow):
                i = ind["ind"][0]
                #print("peak", i)
                pos = self.peaksExtracted.get_offsets()[i]
-               self.peakExtractedOver = self.ax[0].scatter(pos[0], pos[1], marker="o", 
+               self.peakExtractedOver = self.ax0.scatter(pos[0], pos[1], marker="o", 
                                                  c='yellow', s=30, zorder=12)
             self.canvas.draw()
 
@@ -535,7 +538,7 @@ class MainWindow(QMainWindow):
                         xdata[i] = event.xdata + dx + xdata[i] - xdata0
                         ydata[i] = event.ydata + dy + ydata[i] - ydata0 
                 self.line_object.set_data(xdata, ydata)
-                for p in list(self.ax[0].patches):
+                for p in list(self.ax0.patches):
                     pointLabel = p.get_label()
                     i = self.listLabelPoints.index(pointLabel) 
                     p.center = xdata[i], ydata[i]
@@ -553,13 +556,13 @@ class MainWindow(QMainWindow):
             self.update_lineWithWidth()
             self.canvas.draw()
             self.drawProfile()
-        elif event.inaxes == self.ax[0]:              # to zoom and pan in ax[0]
+        elif event.inaxes == self.ax0:              # to zoom and pan in ax[0]
             dx = event.xdata - self.xpress
             dy = event.ydata - self.ypress
             self.cur_xlim -= dx
             self.cur_ylim -= dy
-            self.ax[0].set_xlim(self.cur_xlim)
-            self.ax[0].set_ylim(self.cur_ylim)
+            self.ax0.set_xlim(self.cur_xlim)
+            self.ax0.set_ylim(self.cur_ylim)
             self.canvas.draw()
 
     #------------------------------------------------------------------
@@ -569,9 +572,9 @@ class MainWindow(QMainWindow):
             self.mousepress = "right"
         elif event.button == 1:
             self.mousepress = "left"
-        if event.inaxes == self.ax[0]:              # to zoom and pan in ax[0]
-            self.cur_xlim = self.ax[0].get_xlim()
-            self.cur_ylim = self.ax[0].get_ylim()
+        if event.inaxes == self.ax0:              # to zoom and pan in ax[0]
+            self.cur_xlim = self.ax0.get_xlim()
+            self.cur_ylim = self.ax0.get_ylim()
             self.xpress = event.xdata
             self.ypress = event.ydata
         if event and event.dblclick:
@@ -580,25 +583,25 @@ class MainWindow(QMainWindow):
                 x, y = event.xdata, event.ydata
                 newPointLabel = "Point%d"%self.n
                 point_object = patches.Circle([x, y], radius=self.radius, color='red', fill=False, lw=2,
-                                              alpha=self.alpha_default, transform=self.ax[0].transData, label=newPointLabel)
+                                              alpha=self.alpha_default, transform=self.ax0.transData, label=newPointLabel)
                 point_object.set_picker(5)
-                self.ax[0].add_patch(point_object)
+                self.ax0.add_patch(point_object)
                 self.listLabelPoints.append(newPointLabel)
                 if len(self.listLabelPoints) == 2:
                     xdata = []
                     ydata = []
-                    for p in list(self.ax[0].patches):
+                    for p in list(self.ax0.patches):
                         cx, cy = p.center
                         xdata.append(cx)
                         ydata.append(cy)
-                    self.line_object, = self.ax[0].plot(xdata, ydata, alpha=self.alpha_default, c='red', lw=2, 
+                    self.line_object, = self.ax0.plot(xdata, ydata, alpha=self.alpha_default, c='red', lw=2, 
                                                         picker=True, pickradius=5, label="Profile")
                     self.update_lineWithWidth()
                 self.canvas.draw()
                 self.drawProfile()
 
         #----------------------------------------------
-        if event.inaxes == self.ax[0] and self.peaksExtracted != None:
+        if event.inaxes == self.ax0 and self.peaksExtracted != None:
            cont, ind = self.peaksExtracted.contains(event)
            if cont:
               if self.mousepress == "right":
@@ -642,16 +645,16 @@ class MainWindow(QMainWindow):
             self.profile_segment = self.profile_mx*0 + self.segmentNumb 	# store segment number
             self.dist_profile = np.linspace(0, self.scalePixel*len(self.profile), num=len(self.profile))
 
-            self.ax[1].clear()
-            self.ax[1].set_visible(True)
-            self.ax[1].set_facecolor('whitesmoke')
+            self.ax1.clear()
+            self.ax1.set_visible(True)
+            self.ax1.set_facecolor('whitesmoke')
             
             if self.cboxReverseProfile.isChecked():
             	self.profile = 255 - self.profile
-            self.ax[1].plot(self.dist_profile, self.profile, c='red', lw=1, alpha=0.8)
+            self.ax1.plot(self.dist_profile, self.profile, c='red', lw=1, alpha=0.8)
 
-            self.ax[1].axvline(x=0 , linestyle='dashed', color='red', alpha=0.8)
-            self.ax[1].axvline(x=self.dist_profile[-1] , linestyle='dashed', color='red', alpha=0.8)
+            self.ax1.axvline(x=0 , linestyle='dashed', color='red', alpha=0.8)
+            self.ax1.axvline(x=self.dist_profile[-1] , linestyle='dashed', color='red', alpha=0.8)
             
             kernel = np.ones(self.kernelSize) / self.kernelSize
             self.kernelOffset = int(self.kernelSize/2)
@@ -660,11 +663,11 @@ class MainWindow(QMainWindow):
             self.profile_convolved = np.convolve(self.profile, kernel, mode='same')
             self.profile_convolved[0:self.kernelOffset] = self.profile_convolved[-self.kernelOffset:] = np.nan
 
-            self.ax[1].plot(self.dist_profile, self.profile_convolved, c='b', lw=1, alpha=0.8)
+            self.ax1.plot(self.dist_profile, self.profile_convolved, c='b', lw=1, alpha=0.8)
             
             # https://peakutils.readthedocs.io/en/latest/reference.html
             self.indexes = peakutils.indexes(self.profile_convolved, thres=self.peakutils_thres, thres_abs=True, min_dist=self.peakutils_minDist)
-            self.peaksCurve = self.ax[1].scatter(self.dist_profile[self.indexes], self.profile_convolved[self.indexes], c='b', s=10)
+            self.peaksCurve = self.ax1.scatter(self.dist_profile[self.indexes], self.profile_convolved[self.indexes], c='b', s=10)
 
             if self.peaks != None:
                 self.peaks.remove()
@@ -680,7 +683,7 @@ class MainWindow(QMainWindow):
                 	points.append(newPoint)
             	xs = [point.x for point in points]
             	ys = [point.y for point in points]
-            	self.peaks = self.ax[0].scatter(xs, ys, c='b', s=5, zorder=10)
+            	self.peaks = self.ax0.scatter(xs, ys, c='b', s=5, zorder=10)
            
             stripesNb = len(self.indexes)
             self.line1 = "Number of stripes: %3d" %(stripesNb)
@@ -692,11 +695,11 @@ class MainWindow(QMainWindow):
             else:
                 self.line2 = ""
                 self.line3 = ""
-            self.ax[1].text(0.2, 0.1, self.line1 + '\n' + self.line2 + '\n' + self.line3, 
-                                va="top", transform=self.fig.transFigure)
+            self.ax1.set_title(self.line1 + '\n' + self.line2 + '\n' + self.line3,
+                                y=-0.55, loc='left', fontsize=10)
          
-            self.ax[1].grid(linestyle='dotted')
-            self.ax[1].axhline(self.peakutils_thres, color="b", lw=1, linestyle='solid', alpha=0.8)
+            self.ax1.grid(linestyle='dotted')
+            self.ax1.axhline(self.peakutils_thres, color="b", lw=1, linestyle='solid', alpha=0.8)
 
             self.labelKernelSize.setEnabled(True)
             self.mySliderKernelSize.setEnabled(True)
@@ -741,20 +744,20 @@ class MainWindow(QMainWindow):
             #print("Detected scale length in pixel: ", scaleLength)
 
             if self.scaleLength > 0:
-                self.scale_object = self.ax[0].plot([point1Scale[0], point2Scale[0]],
+                self.scale_object = self.ax0.plot([point1Scale[0], point2Scale[0]],
                                                     [point1Scale[1], point2Scale[1]],
                                                     alpha=1.0, c='purple', lw=2)
         except:
             self.scaleLength = 0
 
         try:
-            self.scaleValue_object = self.ax[0].text(
+            self.scaleValue_object = self.ax0.text(
                 min(point1Scale[0], point2Scale[0]),
                 min(point1Scale[1], point2Scale[1]),
                 "   %.3f mm" %(self.scaleValue),
                 alpha=1.0, c='purple', horizontalalignment='left', verticalalignment='bottom', clip_on=True)
         except:
-            self.scaleValue_object = self.ax[0].text(
+            self.scaleValue_object = self.ax0.text(
                 200, 200,                               # Set a default scaleValue_object at 200,200
                 "   %.3f mm" %(self.scaleValue),
                 alpha=1.0, c='purple', horizontalalignment='left', verticalalignment='bottom', clip_on=True)
@@ -791,7 +794,7 @@ class MainWindow(QMainWindow):
         else:
             return
 
-        self.ax[0].set_title(os.path.basename(self.imageFileName) + '\n'
+        self.ax0.set_title(os.path.basename(self.imageFileName) + '\n'
             + "          Scale length [pixels]: %s" %(self.scaleLength) + '\n'
             + "          Scale value [mm]: %.3f" %(self.scaleValue),
             loc='left', fontsize=10)
@@ -805,12 +808,12 @@ class MainWindow(QMainWindow):
         point1Scale = [xdata[0], ydata[0]]              # Scale from the 1st segment
         point2Scale = [xdata[1], ydata[1]]
         self.scaleLength = int(np.linalg.norm(np.array(point1Scale) - np.array(point2Scale)))
-        self.ax[0].set_title(os.path.basename(self.imageFileName) + '\n' 
+        self.ax0.set_title(os.path.basename(self.imageFileName) + '\n' 
             + "          Scale length [pixels]: %s" %(self.scaleLength) + '\n'
             + "          Scale value [mm]: %.3f" %(self.scaleValue),
             loc='left', fontsize=10)
         if self.scale_object == None:
-            self.scale_object = self.ax[0].plot([point1Scale[0], point2Scale[0]], 
+            self.scale_object = self.ax0.plot([point1Scale[0], point2Scale[0]], 
                                                 [point1Scale[1], point2Scale[1]],
                                                 alpha=1.0, c='purple', lw=2)
         else:
@@ -829,15 +832,15 @@ class MainWindow(QMainWindow):
             ydata = list(self.line_object.get_ydata())
             lineString = LineString([(xdata[0], ydata[0]), (xdata[1], ydata[1])])
             dilated = lineString.buffer(self.profileLinewidth/2., cap_style=2, join_style=1)
-            self.lineWithWidth, = self.ax[0].plot(*dilated.exterior.xy, alpha=self.alpha_default, c='red', lw=2)
+            self.lineWithWidth, = self.ax0.plot(*dilated.exterior.xy, alpha=self.alpha_default, c='red', lw=2)
         
     #------------------------------------------------------------------
     def displayImage(self):
         self.initValues()
         self.initInterface()
 
-        self.ax[0].clear()
-        self.ax[0].set_visible(True)
+        self.ax0.clear()
+        self.ax0.set_visible(True)
 
         img = cv2.imread(self.imageFileName)
         (self.mx, self.my) = np.meshgrid(np.arange(img.shape[1]), np.arange(img.shape[0]))
@@ -847,11 +850,11 @@ class MainWindow(QMainWindow):
         self.alphaLevel =  self.mySliderAlpha.value()/10.
         self.betaLevel = self.mySliderBeta.value()
         self.adjusted = cv2.convertScaleAbs(self.gray, alpha=self.alphaLevel, beta=self.betaLevel)
-        self.image_object = self.ax[0].imshow(self.adjusted, cmap='gray', aspect='equal')
-        self.ax[0].set_adjustable('datalim')
+        self.image_object = self.ax0.imshow(self.adjusted, cmap='gray', aspect='equal')
+        self.ax0.set_adjustable('datalim')
         self.detectScale()
 
-        self.ax[0].set_title(os.path.basename(self.imageFileName) + '\n'
+        self.ax0.set_title(os.path.basename(self.imageFileName) + '\n'
             + "          Scale length [pixels]: %s" %(self.scaleLength) + '\n'
             + "          Scale value [mm]: %.3f" %(self.scaleValue),
             loc='left', fontsize=10)
@@ -911,6 +914,9 @@ class MainWindow(QMainWindow):
 
     #------------------------------------------------------------------
     def extract(self):
+        if len(self.indexes) < 2:       # if not at least 2 peaks (cannot draw segment)
+            return
+
         xdata = list(self.line_object.get_xdata())
         ydata = list(self.line_object.get_ydata())
         lineString = LineString([(xdata[0], ydata[0]), (xdata[1], ydata[1])])
@@ -924,9 +930,9 @@ class MainWindow(QMainWindow):
         line = LineString(points)
         x, y = line.xy
         self.segmentNumb +=1
-        self.segment, = self.ax[0].plot([x[0], x[-1]], [y[0], y[-1]], c='b', lw=2, alpha=self.alpha_default, zorder=0,
+        self.segment, = self.ax0.plot([x[0], x[-1]], [y[0], y[-1]], c='b', lw=2, alpha=self.alpha_default, zorder=0,
                                         picker=True, pickradius=5, label='Segment%02d'%self.segmentNumb)
-        self.peaksExtracted = self.ax[0].scatter(x, y, c='b', marker="o", alpha=self.alpha_default, s=30, zorder=12,
+        self.peaksExtracted = self.ax0.scatter(x, y, c='b', marker="o", alpha=self.alpha_default, s=30, zorder=12,
                                                  label='PeaksSegment%02d'%self.segmentNumb)
 
         text_line.CurvedText(
@@ -934,7 +940,7 @@ class MainWindow(QMainWindow):
             y=[ydata[0], ydata[1]],
             text='Segment %02d'%self.segmentNumb,
             va='bottom',
-            axes=self.ax[0],
+            axes=self.ax0,
             alpha=self.alpha_default,
             color='blue'
         )
@@ -947,12 +953,12 @@ class MainWindow(QMainWindow):
         if self.peaks != None:
             self.peaks.remove()
             self.peaks = None
-        for p in list(self.ax[0].patches):
+        for p in list(self.ax0.patches):
             p.remove()
         self.listLabelPoints = []
         self.n = 0
-        self.ax[1].clear
-        self.ax[1].set_visible(False)
+        self.ax1.clear
+        self.ax1.set_visible(False)
         self.buttonExtract.setEnabled(False)
 
         self.canvas.draw()
