@@ -20,6 +20,7 @@ try:
     from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
     from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
     from matplotlib.figure import Figure
+    from matplotlib.transforms import Bbox
     import matplotlib.patches as patches
     import matplotlib.pyplot as plt
     
@@ -878,40 +879,27 @@ class MainWindow(QMainWindow):
         file1.write("#================================================\n")
         file1.write("# StripesCounter " + version + "\n")
         file1.write("# File: %s\n" %(self.imageFileName))
-        file1.write("# Detected scale value: %.3f\n" %(self.scaleValue))
-        file1.write("# Detected scale length in pixel: %d\n" %(self.scaleLength))
-        file1.write("# Inverse image: %s\n" %(self.cboxInverseImage.isChecked()))
-        file1.write("# Contrast level: %.1f\n" %(self.alphaLevel))
-        file1.write("# Brightness level: %d\n" %(self.betaLevel))
-        file1.write("# Kernel size: %d\n" %(self.kernelSize))
-        file1.write("# Profile linewidth: %d\n" %(self.profileLinewidth))
-        file1.write("# PeakUtils - Minimum distance: %d\n" %(self.peakutils_minDist))
-        file1.write("# PeakUtils - Threshold: %d\n" %(self.peakutils_thres))
-        xdata = list(self.line_object.get_xdata())
-        ydata = list(self.line_object.get_ydata())
-        file1.write("# Number of segments: %d\n" %(len(xdata)-1))
-        for i in range(0,len(xdata)):
-            file1.write("#      Point%d: [%d, %d]\n" %(i+1, xdata[i], ydata[i]))
-        file1.write("# " + self.line1 + '\n# ' + self.line2 + '\n# ' + self.line3 + '\n')
+        file1.write("# Number of segments: %d\n"%(self.segmentNumb))
+        posPeaks = self.peaksExtracted.get_offsets()
         file1.write("#================================================\n")
-        file1.write("n,xpos,ypos1,ypos2,peak,segment\n")
-        profile_convolvedFilled = np.nan_to_num(self.profile_convolved , nan=-999)
-        for i,v in enumerate(self.dist_profile):
-            if i in self.indexes:
-                file1.write("%d,%.7f,%.7f,%.7f,%d,%d\n" 
-                    %(i+1, self.dist_profile[i], self.profile[i], profile_convolvedFilled[i], 1, self.profile_segment[i]))
-            else:
-                file1.write("%d,%.7f,%.7f,%.7f,%d,%d\n" 
-                    %(i+1, self.dist_profile[i], self.profile[i], profile_convolvedFilled[i], 0, self.profile_segment[i]))
         file1.close()
+
+        for p in posPeaks:
+            x, y = p
+            print('%.7f,%.7f,%02d'%(x, y, self.segmentNumb))
+
         file1NamePNG = os.path.splitext(file1NameCSV)[0] + ".png"
-        plt.savefig(file1NamePNG)
+        # https://stackoverflow.com/questions/64676770/save-specific-part-of-matplotlib-figure
+        bbox = self.ax0.get_tightbbox(self.fig.canvas.get_renderer())
+        print(bbox)
+        print(self.ax0.get_window_extent(self.fig.canvas.get_renderer()))
+        print(bbox.transformed(self.fig.dpi_scale_trans.inverted()))
+        plt.savefig(file1NamePNG, bbox_inches=Bbox([[0,3],[8,8]]))
+
         print("---------------------------")
         print("Saved csv file: " + file1NameCSV)
         print("Saved png file: " + file1NamePNG)
         
-        self.canvas.draw()
-
     #------------------------------------------------------------------
     def extract(self):
         if len(self.indexes) < 2:       # if not at least 2 peaks (cannot draw segment)
@@ -936,8 +924,8 @@ class MainWindow(QMainWindow):
                                                  label='PeaksSegment%02d'%self.segmentNumb)
 
         text_line.CurvedText(
-            x=[xdata[0], xdata[1]],
-            y=[ydata[0], ydata[1]],
+            x=[x[0], x[-1]],
+            y=[y[0], y[-1]],
             text='Segment %02d'%self.segmentNumb,
             va='bottom',
             axes=self.ax0,
