@@ -39,7 +39,7 @@ except:
     sys.exit()
 
 #======================================================
-version = "v10.92"
+version = "v10.93"
 maximumWidth = 250
 
 #======================================================
@@ -686,12 +686,12 @@ class MainWindow(QMainWindow):
             	self.peaks = self.ax[0].scatter(xs, ys, c='b', s=5, zorder=10)
            
             stripesNb = len(self.indexes)
-            self.line1 = "Number of stripes: %3d" %(stripesNb)
-            if stripesNb > 0:
+            self.line1 = "Number of peaks: %3d" %(stripesNb)
+            if stripesNb > 1:
                 stripesDist = self.dist_profile[self.indexes[-1]]-self.dist_profile[self.indexes[0]]
                 self.line2 = "Length of stripes: %.5f  (first: %.5f, last: %.5f)" \
                                 %(stripesDist, self.dist_profile[self.indexes[0]], self.dist_profile[self.indexes[-1]])
-                self.line3 = "Growth stripe rate (m/stripe): %.5f" %(1000*stripesDist/stripesNb)
+                self.line3 = "Growth stripe rate (μm/stripe): %.5f" %(1000*stripesDist/(stripesNb-1))
             else:
                 self.line2 = ""
                 self.line3 = ""

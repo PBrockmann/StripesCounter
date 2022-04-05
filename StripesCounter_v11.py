@@ -608,6 +608,7 @@ class MainWindow(QMainWindow):
                       newPosPeaks = newPosPeaks[sortIndices]
                       self.peaksExtractedList[n].set_offsets(newPosPeaks)
                       self.canvas.draw()
+                      self.update_peaksExtractedPlot()
                    break
 
         #----------------------------------------------
@@ -616,14 +617,15 @@ class MainWindow(QMainWindow):
                cont, ind = peaksExtracted.contains(event)
                if cont:
                    if self.mousepress == "right":
-                       if self.peakExtractedOver != None:
-                           self.peakExtractedOver.remove()
-                           self.peakExtractedOver = None
-                       i = ind["ind"][0]
-                       posPeaks = peaksExtracted.get_offsets()
-                       newPosPeaks = np.delete(posPeaks, i, axis=0)
-                       self.peaksExtractedList[n].set_offsets(newPosPeaks)
-                       self.canvas.draw()
+                      if self.peakExtractedOver != None:
+                          self.peakExtractedOver.remove()
+                          self.peakExtractedOver = None
+                      i = ind["ind"][0]
+                      posPeaks = peaksExtracted.get_offsets()
+                      newPosPeaks = np.delete(posPeaks, i, axis=0)
+                      self.peaksExtractedList[n].set_offsets(newPosPeaks)
+                      self.canvas.draw()
+                      self.update_peaksExtractedPlot()
                    break
 
     #------------------------------------------------------------------
@@ -665,8 +667,8 @@ class MainWindow(QMainWindow):
             	self.profile = 255 - self.profile
             self.ax1.plot(self.dist_profile, self.profile, c='red', lw=1, alpha=0.8)
 
-            self.ax1.axvline(x=0 , linestyle='dashed', color='red', alpha=0.8)
-            self.ax1.axvline(x=self.dist_profile[-1] , linestyle='dashed', color='red', alpha=0.8)
+            self.ax1.axvline(x=0, linestyle='dashed', color='gray', alpha=0.8)
+            self.ax1.axvline(x=self.dist_profile[-1], linestyle='dashed', color='gray', alpha=0.8)
             
             kernel = np.ones(self.kernelSize) / self.kernelSize
             self.kernelOffset = int(self.kernelSize/2)
@@ -698,12 +700,12 @@ class MainWindow(QMainWindow):
             	self.peaks = self.ax0.scatter(xs, ys, c='b', s=5, zorder=10)
            
             stripesNb = len(self.indexes)
-            self.line1 = "Number of stripes: %3d" %(stripesNb)
-            if stripesNb > 0:
+            self.line1 = "Number of peaks: %3d" %(stripesNb)
+            if stripesNb > 1:
                 stripesDist = self.dist_profile[self.indexes[-1]]-self.dist_profile[self.indexes[0]]
                 self.line2 = "Length of stripes: %.5f  (first: %.5f, last: %.5f)" \
                                 %(stripesDist, self.dist_profile[self.indexes[0]], self.dist_profile[self.indexes[-1]])
-                self.line3 = "Growth stripe rate (m/stripe): %.5f" %(1000*stripesDist/stripesNb)
+                self.line3 = "Growth stripe rate (µm/stripe): %.5f" %(1000*stripesDist/(stripesNb-1))
             else:
                 self.line2 = ""
                 self.line3 = ""
@@ -848,6 +850,29 @@ class MainWindow(QMainWindow):
             self.lineWithWidth, = self.ax0.plot(*dilated.exterior.xy, alpha=self.alpha_default, c='red', lw=2)
         
     #------------------------------------------------------------------
+    def update_peaksExtractedPlot(self):
+        self.ax1.clear()
+        self.ax1.grid(linestyle='dotted')
+        self.ax1.set_facecolor('whitesmoke')
+        self.ax1.yaxis.set_visible(False)
+        self.ax1.axvline(x=0, linestyle='dashed', color='gray', alpha=0.8)
+
+        posDistance = []
+        for n, peaksExtracted in enumerate(self.peaksExtractedList):
+            posPeaks = peaksExtracted.get_offsets()
+            if len(posPeaks) == 0:
+                continue
+            x0, y0 = posPeaks[0]
+            for i, p in enumerate(posPeaks):
+                x, y = p
+                distance = Point(x0, y0).distance(Point(p))
+                posDistance.append(distance)
+            self.ax1.axvline(x=distance, linestyle='dashed', color='gray', alpha=0.8)
+                
+        self.ax1.plot(posDistance, [0]*len(posDistance), marker='o', c='b', alpha=self.alpha_default, markersize=5)
+        self.canvas.draw()
+
+    #------------------------------------------------------------------
     def displayImage(self):
         self.initValues()
         self.initInterface()
@@ -944,11 +969,9 @@ class MainWindow(QMainWindow):
             p.remove()
         self.listLabelPoints = []
         self.n = 0
-        self.ax1.clear
-        self.ax1.set_visible(False)
         self.buttonExtract.setEnabled(False)
 
-        self.canvas.draw()
+        self.update_peaksExtractedPlot()
 
     #------------------------------------------------------------------
     def save(self):
@@ -964,18 +987,23 @@ class MainWindow(QMainWindow):
         file1.write("#================================================\n")
         file1.write("# StripesCounter " + version + "\n")
         file1.write("# Date: " + date + "\n")
-        file1.write("# File: %s\n" %(self.imageFileName))
+        file1.write("# File: %s\n" %(base))
         file1.write("# Number of segments: %d\n"%(self.segmentNumb))
+        file1.write("# Detected scale value: %.3f\n" %(self.scaleValue))
+        file1.write("# Detected scale length in pixel: %d\n" %(self.scaleLength))
         file1.write("#================================================\n")
 
-        file1.write("n,xpos,ypos,segment\n")
-        n = 1
-        for i, peaksExtracted in enumerate(self.peaksExtractedList):
+        file1.write("n,xpos,ypos,segment,indice_in_segment,distance\n")
+        c = 1
+        for n, peaksExtracted in enumerate(self.peaksExtractedList):
             posPeaks = peaksExtracted.get_offsets()
-            for p in posPeaks:
+            x0, y0 = posPeaks[0]
+            for i, p in enumerate(posPeaks):
                 x, y = p
-                file1.write('%d,%.7f,%.7f,%d\n'%(n, x, y, i+1))
-                n += 1
+                distance = Point(x0, y0).distance(Point(p))
+                file1.write('%d,%.7f,%.7f,%d,%d,%.7f\n'%(c, x, y, n+1, i+1, distance))
+                c += 1
+
         file1.close()
 
         print("Saved csv file: " + file1NameCSV)
