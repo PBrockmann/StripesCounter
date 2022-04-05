@@ -162,11 +162,8 @@ class MainWindow(QMainWindow):
         self.cboxReverseProfile.toggled.connect(self.toggled_cboxReverseProfile)
 
         #-----------------------
-        #self.fig, self.ax = plt.subplots(nrows=2, figsize=(8,8))
-        #self.fig.tight_layout()
-        #self.fig.subplots_adjust(top=0.9, bottom=0.15)
         self.fig = plt.figure(figsize=(8,8))
-        self.ax0 = self.fig.add_axes([0.06, 0.40, 0.90, 0.52])
+        self.ax0 = self.fig.add_axes([0.06, 0.40, 0.90, 0.52])   #  [left, bottom, width, height]
         self.ax1 = self.fig.add_axes([0.06, 0.12, 0.90, 0.22])
 
         self.canvas = FigureCanvas(self.fig)
@@ -436,12 +433,6 @@ class MainWindow(QMainWindow):
             #print("pick", event.mouseevent.button)
             return
 
-        #if event.mouseevent.dblclick:
-        #   if self.mousepress == "left":
-        #       print("double click left")
-        #   elif self.mousepress == "right":
-        #       print("double click right")
-
         if self.current_artist is None:
             self.current_artist = event.artist
             label = event.artist.get_label()
@@ -459,25 +450,6 @@ class MainWindow(QMainWindow):
                  self.offset = [(x0 - x1), (y0 - y1)]
                  event.artist.set_alpha(1.0)
                  self.canvas.draw()
-            elif label == 'Segment%02d'%self.segmentNumb:
-                 if self.mousepress == "left":
-                    xdata = list(self.segment.get_xdata())
-                    ydata = list(self.segment.get_ydata())
-                    lineString = LineString([(xdata[0], ydata[0]), (xdata[1], ydata[1])])
-                    point = Point(event.mouseevent.xdata, event.mouseevent.ydata)
-                    # Closest point on the line
-                    newPoint = lineString.interpolate(lineString.project(point))
-                    posPeaks = self.peaksExtracted.get_offsets()
-                    newPosPeaks = np.concatenate([posPeaks, np.array(newPoint.coords, ndmin=2)])
-                    # sort peaks along the segment after peak add
-                    posDistance = []
-                    for p in newPosPeaks:
-                        distance = Point(xdata[0], ydata[0]).distance(Point(p))
-                        posDistance.append(distance)
-                    sortIndices = np.argsort(posDistance)
-                    newPosPeaks = newPosPeaks[sortIndices]
-                    self.peaksExtracted.set_offsets(newPosPeaks)
-                    self.canvas.draw()
 
     #------------------------------------------------------------------
     def on_motion(self, event):
@@ -600,6 +572,29 @@ class MainWindow(QMainWindow):
                     self.update_lineWithWidth()
                 self.canvas.draw()
                 self.drawProfile()
+
+        #----------------------------------------------
+        if event.inaxes == self.ax0 and self.segment != None:
+           cont, ind = self.segment.contains(event)
+           if cont:
+              if self.mousepress == "left":
+                 xdata = list(self.segment.get_xdata())
+                 ydata = list(self.segment.get_ydata())
+                 lineString = LineString([(xdata[0], ydata[0]), (xdata[1], ydata[1])])
+                 point = Point(event.xdata, event.ydata)
+                 # Closest point on the line
+                 newPoint = lineString.interpolate(lineString.project(point))
+                 posPeaks = self.peaksExtracted.get_offsets()
+                 newPosPeaks = np.concatenate([posPeaks, np.array(newPoint.coords, ndmin=2)])
+                 # sort peaks along the segment after peak add
+                 posDistance = []
+                 for p in newPosPeaks:
+                     distance = Point(xdata[0], ydata[0]).distance(Point(p))
+                     posDistance.append(distance)
+                 sortIndices = np.argsort(posDistance)
+                 newPosPeaks = newPosPeaks[sortIndices]
+                 self.peaksExtracted.set_offsets(newPosPeaks)
+                 self.canvas.draw()
 
         #----------------------------------------------
         if event.inaxes == self.ax0 and self.peaksExtracted != None:
@@ -891,10 +886,10 @@ class MainWindow(QMainWindow):
         file1NamePNG = os.path.splitext(file1NameCSV)[0] + ".png"
         # https://stackoverflow.com/questions/64676770/save-specific-part-of-matplotlib-figure
         bbox = self.ax0.get_tightbbox(self.fig.canvas.get_renderer())
+        #bbox = self.ax0.get_window_extent(self.fig.canvas.get_renderer())
+        bbox = Bbox([[0.0, 3.2], [8.0, 8.0]])
         print(bbox)
-        print(self.ax0.get_window_extent(self.fig.canvas.get_renderer()))
-        print(bbox.transformed(self.fig.dpi_scale_trans.inverted()))
-        plt.savefig(file1NamePNG, bbox_inches=Bbox([[0,3],[8,8]]))
+        plt.savefig(file1NamePNG, bbox_inches=bbox)
 
         print("---------------------------")
         print("Saved csv file: " + file1NameCSV)
@@ -919,9 +914,9 @@ class MainWindow(QMainWindow):
         x, y = line.xy
         self.segmentNumb +=1
         self.segment, = self.ax0.plot([x[0], x[-1]], [y[0], y[-1]], c='b', lw=2, alpha=self.alpha_default, zorder=0,
-                                        picker=True, pickradius=5, label='Segment%02d'%self.segmentNumb)
+                                      label='Segment%02d'%self.segmentNumb)
         self.peaksExtracted = self.ax0.scatter(x, y, c='b', marker="o", alpha=self.alpha_default, s=30, zorder=12,
-                                                 label='PeaksSegment%02d'%self.segmentNumb)
+                                               label='PeaksSegment%02d'%self.segmentNumb)
 
         text_line.CurvedText(
             x=[x[0], x[-1]],

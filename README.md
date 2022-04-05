@@ -98,7 +98,6 @@ v09.0
 
 Tested with
  * matplotlib=3.5.1
- * opencv=4.5.5.64
  * opencv-contrib-python=4.5.5.64
  * peakutils=1.3.3
  * PyQt5=5.15.6
