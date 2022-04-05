@@ -30,7 +30,8 @@ try:
     import numpy as np
     import cv2
     from shapely.geometry import Point, LineString
-    
+
+    import datetime
     import text_line
 
 except:
@@ -186,11 +187,15 @@ class MainWindow(QMainWindow):
         self.buttonDefineScale.setMaximumWidth(maximumWidth)
         self.buttonDefineScale.clicked.connect(self.defineScale)
 
+        self.buttonCapture = QPushButton('Capture image')
+        self.buttonCapture.setMaximumWidth(maximumWidth)
+        self.buttonCapture.clicked.connect(self.capture)
+
         self.buttonExtract = QPushButton('Extract peaks')
         self.buttonExtract.setMaximumWidth(maximumWidth)
         self.buttonExtract.clicked.connect(self.extract)
 
-        self.buttonSave = QPushButton('Save data as CSV and image as PNG')
+        self.buttonSave = QPushButton('Save peaks')
         self.buttonSave.setMaximumWidth(maximumWidth)
         self.buttonSave.clicked.connect(self.save)
 
@@ -225,6 +230,9 @@ class MainWindow(QMainWindow):
         layoutV2.addSpacing(5)
         layoutV2.addWidget(self.buttonDefineScaleValue)
         layoutV2.addWidget(self.buttonDefineScale)
+        layoutV2.addSpacing(5)
+        layoutV2.addWidget(self.buttonCapture)
+        layoutV2.addSpacing(5)
         layoutV2.addWidget(self.buttonExtract)
         layoutV2.addWidget(self.buttonSave)
 
@@ -279,7 +287,9 @@ class MainWindow(QMainWindow):
         self.peakOver1 = None
         self.segmentNumb = 0
         self.segment = None
+        self.segmentList = []
         self.peaksExtracted = None
+        self.peaksExtractedList = []
         self.peakExtractedOver = None
 
         self.line1 = self.line2 = self.line3 = None
@@ -309,6 +319,7 @@ class MainWindow(QMainWindow):
         self.cboxReverseProfile.setChecked(False)
         self.buttonDefineScale.setEnabled(False)
         self.buttonDefineScaleValue.setEnabled(False)
+        self.buttonCapture.setEnabled(False)
         self.buttonExtract.setEnabled(False)
         self.buttonSave.setEnabled(False)
 
@@ -481,17 +492,18 @@ class MainWindow(QMainWindow):
             self.canvas.draw()
 
         #----------------------------------------------
-        if event.inaxes == self.ax0 and self.peaksExtracted != None:
+        if event.inaxes == self.ax0 and len(self.peaksExtractedList) != 0:
             if self.peakExtractedOver != None:
                self.peakExtractedOver.remove()
                self.peakExtractedOver = None
-            cont, ind = self.peaksExtracted.contains(event)
-            if cont:
-               i = ind["ind"][0]
-               #print("peak", i)
-               pos = self.peaksExtracted.get_offsets()[i]
-               self.peakExtractedOver = self.ax0.scatter(pos[0], pos[1], marker="o", 
-                                                 c='yellow', s=30, zorder=12)
+            for n, peaksExtracted in enumerate(self.peaksExtractedList):
+                cont, ind = peaksExtracted.contains(event)
+                if cont:
+                    i = ind["ind"][0]
+                    pos = peaksExtracted.get_offsets()[i]
+                    self.peakExtractedOver = self.ax0.scatter(pos[0], pos[1], marker="o", 
+                                                      c='yellow', s=30, zorder=12)
+                    break
             self.canvas.draw()
 
         #----------------------------------------------
@@ -508,8 +520,8 @@ class MainWindow(QMainWindow):
                 xdata0 = xdata[0]
                 ydata0 = ydata[0]
                 for i in range(0,len(xdata)): 
-                        xdata[i] = event.xdata + dx + xdata[i] - xdata0
-                        ydata[i] = event.ydata + dy + ydata[i] - ydata0 
+                    xdata[i] = event.xdata + dx + xdata[i] - xdata0
+                    ydata[i] = event.ydata + dy + ydata[i] - ydata0 
                 self.line_object.set_data(xdata, ydata)
                 for p in list(self.ax0.patches):
                     pointLabel = p.get_label()
@@ -574,41 +586,45 @@ class MainWindow(QMainWindow):
                 self.drawProfile()
 
         #----------------------------------------------
-        if event.inaxes == self.ax0 and self.segment != None:
-           cont, ind = self.segment.contains(event)
-           if cont:
-              if self.mousepress == "left":
-                 xdata = list(self.segment.get_xdata())
-                 ydata = list(self.segment.get_ydata())
-                 lineString = LineString([(xdata[0], ydata[0]), (xdata[1], ydata[1])])
-                 point = Point(event.xdata, event.ydata)
-                 # Closest point on the line
-                 newPoint = lineString.interpolate(lineString.project(point))
-                 posPeaks = self.peaksExtracted.get_offsets()
-                 newPosPeaks = np.concatenate([posPeaks, np.array(newPoint.coords, ndmin=2)])
-                 # sort peaks along the segment after peak add
-                 posDistance = []
-                 for p in newPosPeaks:
-                     distance = Point(xdata[0], ydata[0]).distance(Point(p))
-                     posDistance.append(distance)
-                 sortIndices = np.argsort(posDistance)
-                 newPosPeaks = newPosPeaks[sortIndices]
-                 self.peaksExtracted.set_offsets(newPosPeaks)
-                 self.canvas.draw()
+        if event.inaxes == self.ax0 and len(self.segmentList) != 0:
+           for n, segment in enumerate(self.segmentList):
+               cont, ind = segment.contains(event)
+               if cont:
+                   if self.mousepress == "left":
+                      xdata = list(segment.get_xdata())
+                      ydata = list(segment.get_ydata())
+                      lineString = LineString([(xdata[0], ydata[0]), (xdata[1], ydata[1])])
+                      point = Point(event.xdata, event.ydata)
+                      # Closest point on the line
+                      newPoint = lineString.interpolate(lineString.project(point))
+                      posPeaks = self.peaksExtractedList[n].get_offsets()
+                      newPosPeaks = np.concatenate([posPeaks, np.array(newPoint.coords, ndmin=2)])
+                      # sort peaks along the segment after peak add
+                      posDistance = []
+                      for p in newPosPeaks:
+                          distance = Point(xdata[0], ydata[0]).distance(Point(p))
+                          posDistance.append(distance)
+                      sortIndices = np.argsort(posDistance)
+                      newPosPeaks = newPosPeaks[sortIndices]
+                      self.peaksExtractedList[n].set_offsets(newPosPeaks)
+                      self.canvas.draw()
+                   break
 
         #----------------------------------------------
-        if event.inaxes == self.ax0 and self.peaksExtracted != None:
-           cont, ind = self.peaksExtracted.contains(event)
-           if cont:
-              if self.mousepress == "right":
-                 if self.peakExtractedOver != None:
-                    self.peakExtractedOver.remove()
-                    self.peakExtractedOver = None
-                 i = ind["ind"][0]
-                 posPeaks = self.peaksExtracted.get_offsets()
-                 newPosPeaks = np.delete(posPeaks, i, axis=0)
-                 self.peaksExtracted.set_offsets(newPosPeaks)
-                 self.canvas.draw()
+        if event.inaxes == self.ax0 and len(self.peaksExtractedList) != 0:
+           for n, peaksExtracted in enumerate(self.peaksExtractedList):
+               cont, ind = peaksExtracted.contains(event)
+               if cont:
+                   if self.mousepress == "right":
+                       if self.peakExtractedOver != None:
+                           self.peakExtractedOver.remove()
+                           self.peakExtractedOver = None
+                       i = ind["ind"][0]
+                       posPeaks = peaksExtracted.get_offsets()
+                       newPosPeaks = np.delete(posPeaks, i, axis=0)
+                       self.peaksExtractedList[n].set_offsets(newPosPeaks)
+                       self.canvas.draw()
+                   break
 
     #------------------------------------------------------------------
     def drawProfile(self):
@@ -709,6 +725,7 @@ class MainWindow(QMainWindow):
             self.cboxReverseProfile.setEnabled(True)
             self.buttonDefineScaleValue.setEnabled(True)
             self.buttonDefineScale.setEnabled(True)
+            self.buttonCapture.setEnabled(True)
             self.buttonExtract.setEnabled(True)
             self.buttonSave.setEnabled(True)
 
@@ -864,35 +881,20 @@ class MainWindow(QMainWindow):
         self.canvas.draw()
 
     #------------------------------------------------------------------
-    def save(self):
+    def capture(self):
         base=os.path.basename(self.imageFileName)
-        file1Name = os.path.splitext(base)[0] + "_StripesCounterFile_{}.csv"
+        file1Name = os.path.splitext(base)[0] + "_StripesCounterFile_{}.png"
         while os.path.isfile(file1Name.format("%02d" %self.counterFilename)):
             self.counterFilename += 1
-        file1NameCSV = file1Name.format("%02d" %self.counterFilename)
-        file1 = open(file1NameCSV, "w")
-        file1.write("#================================================\n")
-        file1.write("# StripesCounter " + version + "\n")
-        file1.write("# File: %s\n" %(self.imageFileName))
-        file1.write("# Number of segments: %d\n"%(self.segmentNumb))
-        posPeaks = self.peaksExtracted.get_offsets()
-        file1.write("#================================================\n")
-        file1.close()
 
-        for p in posPeaks:
-            x, y = p
-            print('%.7f,%.7f,%02d'%(x, y, self.segmentNumb))
+        file1NamePNG = file1Name.format("%02d" %self.counterFilename)
 
-        file1NamePNG = os.path.splitext(file1NameCSV)[0] + ".png"
         # https://stackoverflow.com/questions/64676770/save-specific-part-of-matplotlib-figure
         bbox = self.ax0.get_tightbbox(self.fig.canvas.get_renderer())
         #bbox = self.ax0.get_window_extent(self.fig.canvas.get_renderer())
-        bbox = Bbox([[0.0, 3.2], [8.0, 8.0]])
-        print(bbox)
+        bbox = Bbox([[0.0, 2.6], [8.2, 7.6]])
         plt.savefig(file1NamePNG, bbox_inches=bbox)
 
-        print("---------------------------")
-        print("Saved csv file: " + file1NameCSV)
         print("Saved png file: " + file1NamePNG)
         
     #------------------------------------------------------------------
@@ -915,8 +917,10 @@ class MainWindow(QMainWindow):
         self.segmentNumb +=1
         self.segment, = self.ax0.plot([x[0], x[-1]], [y[0], y[-1]], c='b', lw=2, alpha=self.alpha_default, zorder=0,
                                       label='Segment%02d'%self.segmentNumb)
+        self.segmentList.append(self.segment)
         self.peaksExtracted = self.ax0.scatter(x, y, c='b', marker="o", alpha=self.alpha_default, s=30, zorder=12,
                                                label='PeaksSegment%02d'%self.segmentNumb)
+        self.peaksExtractedList.append(self.peaksExtracted)
 
         text_line.CurvedText(
             x=[x[0], x[-1]],
@@ -946,6 +950,36 @@ class MainWindow(QMainWindow):
 
         self.canvas.draw()
 
+    #------------------------------------------------------------------
+    def save(self):
+        base=os.path.basename(self.imageFileName)
+        file1Name = os.path.splitext(base)[0] + "_StripesCounterFile_{}.csv"
+        while os.path.isfile(file1Name.format("%02d" %self.counterFilename)):
+            self.counterFilename += 1
+        file1NameCSV = file1Name.format("%02d" %self.counterFilename)
+
+        date = datetime.datetime.now().strftime("%Y/%m/%d at %X")
+
+        file1 = open(file1NameCSV, "w")
+        file1.write("#================================================\n")
+        file1.write("# StripesCounter " + version + "\n")
+        file1.write("# Date: " + date + "\n")
+        file1.write("# File: %s\n" %(self.imageFileName))
+        file1.write("# Number of segments: %d\n"%(self.segmentNumb))
+        file1.write("#================================================\n")
+
+        file1.write("n,xpos,ypos,segment\n")
+        n = 1
+        for i, peaksExtracted in enumerate(self.peaksExtractedList):
+            posPeaks = peaksExtracted.get_offsets()
+            for p in posPeaks:
+                x, y = p
+                file1.write('%d,%.7f,%.7f,%d\n'%(n, x, y, i+1))
+                n += 1
+        file1.close()
+
+        print("Saved csv file: " + file1NameCSV)
+        
     #------------------------------------------------------------------
     def openFileNameDialog(self):
         options = QFileDialog.Options()
