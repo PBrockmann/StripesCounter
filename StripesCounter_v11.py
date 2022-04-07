@@ -229,7 +229,7 @@ class MainWindow(QMainWindow):
         self.buttonExtract.setMaximumWidth(maximumWidth)
         self.buttonExtract.clicked.connect(self.extract)
 
-        self.buttonSave = QPushButton('Save peaks')
+        self.buttonSave = QPushButton('Save peaks and stripes')
         self.buttonSave.setMaximumWidth(maximumWidth)
         self.buttonSave.clicked.connect(self.save)
 
@@ -565,6 +565,20 @@ class MainWindow(QMainWindow):
             self.canvas.draw()
 
         #----------------------------------------------
+        if event.inaxes == self.ax1 and len(self.peaksExtractedList) != 0 and self.line_object == None:
+            cont, ind = self.peaksExtracted1.contains(event)
+            if cont:
+                i = ind["ind"][0]
+                pos = self.peaksExtracted1.get_offsets()[i]
+                self.peakExtractedOver1 = self.ax1.scatter(pos[0], pos[1], marker='o', 
+                                                  c='yellow', s=200, edgecolors='b', lw=1, alpha=0.8, zorder=0)
+                peaksExtractedAllList = [sc.get_offsets() for sc in self.peaksExtractedList]  # all all peaks as a unique list
+                peaksExtractedAll = np.concatenate(peaksExtractedAllList)    
+                self.peakExtractedOver0 = self.ax0.scatter(peaksExtractedAll[i][0], peaksExtractedAll[i][1], marker='o', 
+                                                  c='yellow', s=30, zorder=12)
+                self.canvas.draw()
+
+        #----------------------------------------------
         if not self.press: return
         if event.xdata == None or event.ydata == None: return
 
@@ -679,10 +693,11 @@ class MainWindow(QMainWindow):
                    if self.mousepress == "right":
                       i = ind["ind"][0]
                       posPeaks = peaksExtracted.get_offsets()
-                      newPosPeaks = np.delete(posPeaks, i, axis=0)
-                      self.peaksExtractedList[n].set_offsets(newPosPeaks)
-                      self.canvas.draw()
-                      self.update_peaksExtractedPlot()
+                      if len(posPeaks) > 2:
+                          newPosPeaks = np.delete(posPeaks, i, axis=0)
+                          self.peaksExtractedList[n].set_offsets(newPosPeaks)
+                          self.canvas.draw()
+                          self.update_peaksExtractedPlot()
                    break
 
     #------------------------------------------------------------------
@@ -909,19 +924,16 @@ class MainWindow(QMainWindow):
         self.ax1.set_facecolor('whitesmoke')
         self.ax1.yaxis.set_visible(False)
         self.ax1.axvline(x=0, linestyle='dashed', color='gray', alpha=0.8)
+        self.ax1.set_ylim(-5,5)
 
-        allPeaks = []
         lengthPeaks = []
         for n, peaksExtracted in enumerate(self.peaksExtractedList):
             posPeaks = peaksExtracted.get_offsets()
 
-            allPeaks.extend(posPeaks)
-
             if len(lengthPeaks) == 0:
                 lengthPeaks.append(0)
             else:
-                lengthPeaks.append(lengthPeaks[-1])
-                #lengthPeaks.append(lengthPeaks[-1] + Point(allPeaks[-1]).distance(Point(posPeaks[0])) * self.scalePixel)
+                lengthPeaks.append(lengthPeaks[-1])     # segments are contiguous
 
             self.ax1.axvline(x=lengthPeaks[-1], linestyle='dashed', color='gray', alpha=0.8)
             for i in range(0, len(posPeaks)-1):
@@ -986,9 +998,7 @@ class MainWindow(QMainWindow):
 
         file1NamePNG = file1Name.format("%02d" %self.counterFilename)
 
-        # https://stackoverflow.com/questions/64676770/save-specific-part-of-matplotlib-figure
         bbox = self.ax0.get_tightbbox(self.fig.canvas.get_renderer())
-        #bbox = self.ax0.get_window_extent(self.fig.canvas.get_renderer())
         bbox = Bbox([[0.0, 2.6], [8.2, 7.6]])
         plt.savefig(file1NamePNG, bbox_inches=bbox)
 
@@ -1019,14 +1029,14 @@ class MainWindow(QMainWindow):
                                                label='PeaksSegment%02d'%self.segmentNumb)
         self.peaksExtractedList.append(self.peaksExtracted)
 
-
         dx = x[-1] - x[0]
         dy = y[-1] - y[0]
         angle = np.rad2deg(np.arctan2(dy, dx))
         right = line.parallel_offset(10, 'right')
-        self.ax0.plot(right.xy[0],right.xy[1])
+        #self.ax0.plot(right.xy[0],right.xy[1], c='g')
         #text = self.ax0.text(x[0], y[0], 'Segment %02d'%self.segmentNumb, ha='left', va='bottom', fontsize=12,
-        text = self.ax0.text(right.boundary[1].xy[0][0], right.boundary[1].xy[1][0], 'Segment %02d'%self.segmentNumb, ha='left', va='bottom', fontsize=12,
+        text = self.ax0.text(right.boundary.geoms[1].xy[0][0], right.boundary.geoms[1].xy[1][0], 
+                 'Segment %02d'%self.segmentNumb, ha='left', va='bottom', fontsize=12,
                  transform_rotates_text=True, rotation=angle, rotation_mode='anchor', clip_on=True,
                  alpha=self.alpha_default, color='b')
         self.segmentTextList.append(text)
@@ -1078,20 +1088,27 @@ class MainWindow(QMainWindow):
         file1.write("# Date: " + date + "\n")
         file1.write("# File: %s\n" %(base))
         file1.write("# Number of segments: %d\n"%(self.segmentNumb))
-        file1.write("# Detected scale value: %.3f\n" %(self.scaleValue))
+        file1.write("# Detected scale value (mm): %.3f\n" %(self.scaleValue))
         file1.write("# Detected scale length in pixel: %d\n" %(self.scaleLength))
         file1.write("#================================================\n")
 
-        file1.write("n,xpos,ypos,segment,peakNumbInSegment,distance\n")
-        c = 1
-        for n, peaksExtracted in enumerate(self.peaksExtractedList):
+        file1.write("n,xPixel,yPixel,segment,peakNumbInSegment,distanceInSegment,distanceCumulated,stripeLength\n")
+        n = 1
+        distancePrevious = distanceCumulated = 0
+        for s, peaksExtracted in enumerate(self.peaksExtractedList):
             posPeaks = peaksExtracted.get_offsets()
             x0, y0 = posPeaks[0]
             for i, p in enumerate(posPeaks):
                 x, y = p
-                distance = Point(x0, y0).distance(Point(p))
-                file1.write('%d,%.7f,%.7f,%d,%d,%.7f\n'%(c, x, y, n+1, i+1, distance))
-                c += 1
+                distance = Point(x0, y0).distance(Point(p)) * self.scalePixel
+                if (distance == 0): 
+                    stripeLength = 0
+                else:
+                    stripeLength = distance - distancePrevious
+                distanceCumulated += stripeLength
+                file1.write('%05d,%05.7f,%05.7f,%03d,%03d,%05.7f,%05.7f,%05.7f\n'%(n, x, y, s+1, i+1, distance, distanceCumulated, stripeLength))
+                distancePrevious = distance
+                n += 1
 
         file1.close()
 
@@ -1113,8 +1130,8 @@ class MainWindow(QMainWindow):
         self.update_peaksExtractedPlot()
 
         if len(self.segmentList) == 0:
-            self.ax1.clear()
             self.ax1.set_visible(False)
+            self.ax1.clear()
             self.buttonDeleteLastSegment.setEnabled(False)
             self.buttonSave.setEnabled(False)
 
