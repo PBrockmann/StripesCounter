@@ -187,10 +187,6 @@ class MainWindow(QMainWindow):
         self.buttonDefineScale.setMaximumWidth(maximumWidth)
         self.buttonDefineScale.clicked.connect(self.defineScale)
 
-        self.buttonCapture = QPushButton('Capture image')
-        self.buttonCapture.setMaximumWidth(maximumWidth)
-        self.buttonCapture.clicked.connect(self.capture)
-
         self.buttonExtract = QPushButton('Extract peaks')
         self.buttonExtract.setMaximumWidth(maximumWidth)
         self.buttonExtract.clicked.connect(self.extract)
@@ -198,6 +194,10 @@ class MainWindow(QMainWindow):
         self.buttonSave = QPushButton('Save peaks')
         self.buttonSave.setMaximumWidth(maximumWidth)
         self.buttonSave.clicked.connect(self.save)
+
+        self.buttonCapture = QPushButton('Capture image')
+        self.buttonCapture.setMaximumWidth(maximumWidth)
+        self.buttonCapture.clicked.connect(self.capture)
 
         layoutH = QHBoxLayout()
 
@@ -227,14 +227,14 @@ class MainWindow(QMainWindow):
         layoutV2.addWidget(self.mySliderPeakUtils_thres)
         layoutV2.addWidget(self.cboxPeaks)
         layoutV2.addWidget(self.cboxReverseProfile)
-        layoutV2.addSpacing(5)
+        layoutV2.addSpacing(1)
         layoutV2.addWidget(self.buttonDefineScaleValue)
         layoutV2.addWidget(self.buttonDefineScale)
-        layoutV2.addSpacing(5)
-        layoutV2.addWidget(self.buttonCapture)
-        layoutV2.addSpacing(5)
+        layoutV2.addSpacing(20)
         layoutV2.addWidget(self.buttonExtract)
         layoutV2.addWidget(self.buttonSave)
+        layoutV2.addSpacing(20)
+        layoutV2.addWidget(self.buttonCapture)
 
         layoutH.addLayout(layoutV1)
         layoutH.addLayout(layoutV2)
@@ -290,7 +290,9 @@ class MainWindow(QMainWindow):
         self.segmentList = []
         self.peaksExtracted = None
         self.peaksExtractedList = []
-        self.peakExtractedOver = None
+        self.peakExtractedOver0 = None
+        self.peaksExtracted1 = None
+        self.peakExtractedOver1 = None
 
         self.line1 = self.line2 = self.line3 = None
         self.counterFilename = 1
@@ -492,18 +494,26 @@ class MainWindow(QMainWindow):
             self.canvas.draw()
 
         #----------------------------------------------
-        if event.inaxes == self.ax0 and len(self.peaksExtractedList) != 0:
-            if self.peakExtractedOver != None:
-               self.peakExtractedOver.remove()
-               self.peakExtractedOver = None
+        if event.inaxes == self.ax0 and len(self.peaksExtractedList) != 0 and self.line_object == None:
+            if self.peakExtractedOver0 != None:
+               self.peakExtractedOver0.remove()
+               self.peakExtractedOver0 = None
+            offset = 0
             for n, peaksExtracted in enumerate(self.peaksExtractedList):
                 cont, ind = peaksExtracted.contains(event)
                 if cont:
                     i = ind["ind"][0]
                     pos = peaksExtracted.get_offsets()[i]
-                    self.peakExtractedOver = self.ax0.scatter(pos[0], pos[1], marker="o", 
+                    self.peakExtractedOver0 = self.ax0.scatter(pos[0], pos[1], marker='o', 
                                                       c='yellow', s=30, zorder=12)
+                    pos = self.peaksExtracted1.get_offsets()[i+offset]
+                    if self.peakExtractedOver1 != None:
+                        self.peakExtractedOver1.remove()
+                        self.peakExtractedOver1 = None
+                    self.peakExtractedOver1 = self.ax1.scatter(pos[0], pos[1],
+                                                      c='yellow', s=200, edgecolors='b', lw=1, alpha=0.8, zorder=0)
                     break
+                offset = offset + len(peaksExtracted.get_offsets()) 
             self.canvas.draw()
 
         #----------------------------------------------
@@ -586,7 +596,7 @@ class MainWindow(QMainWindow):
                 self.drawProfile()
 
         #----------------------------------------------
-        if event.inaxes == self.ax0 and len(self.segmentList) != 0:
+        if event.inaxes == self.ax0 and len(self.segmentList) != 0 and self.line_object == None:
            for n, segment in enumerate(self.segmentList):
                cont, ind = segment.contains(event)
                if cont:
@@ -612,14 +622,14 @@ class MainWindow(QMainWindow):
                    break
 
         #----------------------------------------------
-        if event.inaxes == self.ax0 and len(self.peaksExtractedList) != 0:
+        if event.inaxes == self.ax0 and len(self.peaksExtractedList) != 0 and self.line_object == None:
            for n, peaksExtracted in enumerate(self.peaksExtractedList):
                cont, ind = peaksExtracted.contains(event)
                if cont:
                    if self.mousepress == "right":
-                      if self.peakExtractedOver != None:
-                          self.peakExtractedOver.remove()
-                          self.peakExtractedOver = None
+                      if self.peakExtractedOver0 != None:
+                          self.peakExtractedOver0.remove()
+                          self.peakExtractedOver0 = None
                       i = ind["ind"][0]
                       posPeaks = peaksExtracted.get_offsets()
                       newPosPeaks = np.delete(posPeaks, i, axis=0)
@@ -645,7 +655,6 @@ class MainWindow(QMainWindow):
             self.profile =  np.array([]) 
             self.profile_mx = np.array([])
             self.profile_my = np.array([])
-            self.profile_segment = np.array([])
             self.dist_profile = np.array([])
 
             self.profile = profile_line(self.adjusted, (ydata[0], xdata[0]), (ydata[1], xdata[1]),
@@ -656,7 +665,6 @@ class MainWindow(QMainWindow):
             self.profile_my = profile_line(self.my, (ydata[0], xdata[0]), (ydata[1], xdata[1]),
                                         order=0, mode='constant', cval=0, linewidth=self.profileLinewidth)
 
-            self.profile_segment = self.profile_mx*0 + self.segmentNumb 	# store segment number
             self.dist_profile = np.linspace(0, self.scalePixel*len(self.profile), num=len(self.profile))
 
             self.ax1.clear()
@@ -699,18 +707,16 @@ class MainWindow(QMainWindow):
             	ys = [point.y for point in points]
             	self.peaks = self.ax0.scatter(xs, ys, c='b', s=5, zorder=10)
            
-            stripesNb = len(self.indexes)
-            self.line1 = "Number of peaks: %3d" %(stripesNb)
-            if stripesNb > 1:
+            peaksNb = len(self.indexes)
+            self.line1 = "Number of peaks: %3d" %(peaksNb)
+            if peaksNb > 1:
                 stripesDist = self.dist_profile[self.indexes[-1]]-self.dist_profile[self.indexes[0]]
                 self.line2 = "Length of stripes: %.5f  (first: %.5f, last: %.5f)" \
                                 %(stripesDist, self.dist_profile[self.indexes[0]], self.dist_profile[self.indexes[-1]])
-                self.line3 = "Growth stripe rate (µm/stripe): %.5f" %(1000*stripesDist/(stripesNb-1))
+                self.line3 = "Growth stripe rate (µm/stripe): %.5f" %(1000*stripesDist/(peaksNb-1))
+                self.ax1.set_title(self.line1 + '\n' + self.line2 + '\n' + self.line3, y=-0.55, loc='left', fontsize=10)
             else:
-                self.line2 = ""
-                self.line3 = ""
-            self.ax1.set_title(self.line1 + '\n' + self.line2 + '\n' + self.line3,
-                                y=-0.55, loc='left', fontsize=10)
+                self.ax1.set_title(self.line1, y=-0.55, loc='left', fontsize=10)
          
             self.ax1.grid(linestyle='dotted')
             self.ax1.axhline(self.peakutils_thres, color="b", lw=1, linestyle='solid', alpha=0.8)
@@ -857,19 +863,27 @@ class MainWindow(QMainWindow):
         self.ax1.yaxis.set_visible(False)
         self.ax1.axvline(x=0, linestyle='dashed', color='gray', alpha=0.8)
 
-        posDistance = []
+        lengthPeaks = [0]
         for n, peaksExtracted in enumerate(self.peaksExtractedList):
             posPeaks = peaksExtracted.get_offsets()
-            if len(posPeaks) == 0:
-                continue
-            x0, y0 = posPeaks[0]
-            for i, p in enumerate(posPeaks):
-                x, y = p
-                distance = Point(x0, y0).distance(Point(p))
-                posDistance.append(distance)
-            self.ax1.axvline(x=distance, linestyle='dashed', color='gray', alpha=0.8)
-                
-        self.ax1.plot(posDistance, [0]*len(posDistance), marker='o', c='b', alpha=self.alpha_default, markersize=5)
+            for i in range(1, len(posPeaks)):
+                distance = Point(posPeaks[i]).distance(Point(posPeaks[i-1])) * self.scalePixel
+                lengthPeaks.append(lengthPeaks[-1] + distance)
+            self.ax1.axvline(x=lengthPeaks[-1], linestyle='dashed', color='gray', alpha=0.8)
+
+        self.ax1.plot(lengthPeaks, [0]*len(lengthPeaks), marker='o', c='b', alpha=self.alpha_default, markersize=5)
+        self.peaksExtracted1 = self.ax1.scatter(lengthPeaks, [0]*len(lengthPeaks), marker='o', c='b', alpha=self.alpha_default, s=5)
+
+
+        peaksNb = len(lengthPeaks)
+        self.line1 = "Number of peaks: %3d" %(peaksNb)
+        if peaksNb > 1:
+            self.line2 = "Total length: %.5f"%(lengthPeaks[-1] )
+            self.line3 = "Growth stripe rate (µm/stripe): %.5f" %(1000*lengthPeaks[-1]/(peaksNb-1))
+            self.ax1.set_title(self.line1 + '\n' + self.line2 + '\n' + self.line3, y=-0.55, loc='left', fontsize=10)
+        else:
+            self.ax1.set_title(self.line1, y=-0.55, loc='left', fontsize=10)
+        
         self.canvas.draw()
 
     #------------------------------------------------------------------
@@ -943,7 +957,7 @@ class MainWindow(QMainWindow):
         self.segment, = self.ax0.plot([x[0], x[-1]], [y[0], y[-1]], c='b', lw=2, alpha=self.alpha_default, zorder=0,
                                       label='Segment%02d'%self.segmentNumb)
         self.segmentList.append(self.segment)
-        self.peaksExtracted = self.ax0.scatter(x, y, c='b', marker="o", alpha=self.alpha_default, s=30, zorder=12,
+        self.peaksExtracted = self.ax0.scatter(x, y, c='b', marker='o', alpha=self.alpha_default, s=30, zorder=12,
                                                label='PeaksSegment%02d'%self.segmentNumb)
         self.peaksExtractedList.append(self.peaksExtracted)
 
@@ -972,6 +986,19 @@ class MainWindow(QMainWindow):
         self.buttonExtract.setEnabled(False)
 
         self.update_peaksExtractedPlot()
+
+        self.labelKernelSize.setEnabled(False)
+        self.mySliderKernelSize.setEnabled(False)
+        self.labelProfileLinewidth.setEnabled(False)
+        self.mySliderProfileLinewidth.setEnabled(False)
+        self.labelPeakUtils_minDist.setEnabled(False)
+        self.mySliderPeakUtils_minDist.setEnabled(False)
+        self.labelPeakUtils_thres.setEnabled(False)
+        self.mySliderPeakUtils_thres.setEnabled(False)
+        self.cboxPeaks.setEnabled(False)
+        self.cboxReverseProfile.setEnabled(False)
+        self.buttonDefineScaleValue.setEnabled(False)
+        self.buttonDefineScale.setEnabled(False)
 
     #------------------------------------------------------------------
     def save(self):
