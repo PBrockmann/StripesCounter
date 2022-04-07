@@ -32,7 +32,6 @@ try:
     from shapely.geometry import Point, LineString
 
     import datetime
-    import text_line
 
 except:
     print("Some modules have not been found:")
@@ -42,6 +41,45 @@ except:
 #======================================================
 version = "v11.20"
 maximumWidth = 250
+
+#======================================================
+def label_line(line, label, x, y, color='0.5', size=12):
+    """
+    Add a label to a line, at the proper angle.
+
+    Arguments
+    ---------
+    line : matplotlib.lines.Line2D object,
+    label : str
+    x : float
+        x-position to place center of text (in data coordinated
+    y : float
+        y-position to place center of text (in data coordinates)
+    color : str
+    size : float
+    """
+    xdata, ydata = line.get_data()
+    x1 = xdata[0]
+    x2 = xdata[-1]
+    y1 = ydata[0]
+    y2 = ydata[-1]
+
+    ax = line.get_axes()
+    text = ax.annotate(label, xy=(x, y), xytext=(-10, 0),
+                       textcoords='offset points',
+                       size=size, color=color,
+                       horizontalalignment='left',
+                       verticalalignment='bottom')
+
+    sp1 = ax.transData.transform_point((x1, y1))
+    sp2 = ax.transData.transform_point((x2, y2))
+
+    rise = (sp2[1] - sp1[1])
+    run = (sp2[0] - sp1[0])
+
+    slope_degrees = np.degrees(np.arctan2(rise, run))
+    text.set_rotation(slope_degrees)
+    return text
 
 #======================================================
 class MainWindow(QMainWindow):
@@ -199,6 +237,10 @@ class MainWindow(QMainWindow):
         self.buttonCapture.setMaximumWidth(maximumWidth)
         self.buttonCapture.clicked.connect(self.capture)
 
+        self.buttonDeleteLastSegment = QPushButton('Delete last segment')
+        self.buttonDeleteLastSegment.setMaximumWidth(maximumWidth)
+        self.buttonDeleteLastSegment.clicked.connect(self.deleteLastSegment)
+
         layoutH = QHBoxLayout()
 
         layoutV1 = QVBoxLayout()
@@ -235,6 +277,8 @@ class MainWindow(QMainWindow):
         layoutV2.addWidget(self.buttonSave)
         layoutV2.addSpacing(20)
         layoutV2.addWidget(self.buttonCapture)
+        layoutV2.addSpacing(20)
+        layoutV2.addWidget(self.buttonDeleteLastSegment)
 
         layoutH.addLayout(layoutV1)
         layoutH.addLayout(layoutV2)
@@ -288,6 +332,7 @@ class MainWindow(QMainWindow):
         self.segmentNumb = 0
         self.segment = None
         self.segmentList = []
+        self.segmentTextList = []
         self.peaksExtracted = None
         self.peaksExtractedList = []
         self.peakExtractedOver0 = None
@@ -324,6 +369,7 @@ class MainWindow(QMainWindow):
         self.buttonCapture.setEnabled(False)
         self.buttonExtract.setEnabled(False)
         self.buttonSave.setEnabled(False)
+        self.buttonDeleteLastSegment.setEnabled(False)
 
         self.mySliderKernelSize.setValue(self.kernelSize)
         self.mySliderProfileLinewidth.setValue(self.profileLinewidth)
@@ -465,18 +511,26 @@ class MainWindow(QMainWindow):
                  self.canvas.draw()
 
     #------------------------------------------------------------------
-    def on_motion(self, event):
-        #----------------------------------------------
+    def clearPeaksOver(self):
         if self.peakOver0 != None:
             self.peakOver0.remove()
             self.peakOver0 = None
-            self.canvas.draw()
         if self.peakOver1 != None:
             self.peakOver1.remove()
             self.peakOver1 = None
-            self.canvas.draw()
+        if self.peakExtractedOver0 != None:
+            self.peakExtractedOver0.remove()
+            self.peakExtractedOver0 = None
+        if self.peakExtractedOver1 != None:
+            self.peakExtractedOver1.remove()
+            self.peakExtractedOver1 = None
+        self.canvas.draw()
 
-        #----------------------------------------------
+    #------------------------------------------------------------------
+    def on_motion(self, event):
+
+        self.clearPeaksOver()
+
         # display over scatter points when mouse passes over a peak
         cont = False
         if event.inaxes == self.ax0 and self.peaks != None and self.cboxPeaks.isChecked():
@@ -495,9 +549,6 @@ class MainWindow(QMainWindow):
 
         #----------------------------------------------
         if event.inaxes == self.ax0 and len(self.peaksExtractedList) != 0 and self.line_object == None:
-            if self.peakExtractedOver0 != None:
-               self.peakExtractedOver0.remove()
-               self.peakExtractedOver0 = None
             offset = 0
             for n, peaksExtracted in enumerate(self.peaksExtractedList):
                 cont, ind = peaksExtracted.contains(event)
@@ -507,9 +558,6 @@ class MainWindow(QMainWindow):
                     self.peakExtractedOver0 = self.ax0.scatter(pos[0], pos[1], marker='o', 
                                                       c='yellow', s=30, zorder=12)
                     pos = self.peaksExtracted1.get_offsets()[i+offset]
-                    if self.peakExtractedOver1 != None:
-                        self.peakExtractedOver1.remove()
-                        self.peakExtractedOver1 = None
                     self.peakExtractedOver1 = self.ax1.scatter(pos[0], pos[1],
                                                       c='yellow', s=200, edgecolors='b', lw=1, alpha=0.8, zorder=0)
                     break
@@ -562,6 +610,8 @@ class MainWindow(QMainWindow):
 
     #------------------------------------------------------------------
     def on_press(self, event):
+        self.clearPeaksOver()
+
         self.press = True
         if event.button == 3:
             self.mousepress = "right"
@@ -627,9 +677,6 @@ class MainWindow(QMainWindow):
                cont, ind = peaksExtracted.contains(event)
                if cont:
                    if self.mousepress == "right":
-                      if self.peakExtractedOver0 != None:
-                          self.peakExtractedOver0.remove()
-                          self.peakExtractedOver0 = None
                       i = ind["ind"][0]
                       posPeaks = peaksExtracted.get_offsets()
                       newPosPeaks = np.delete(posPeaks, i, axis=0)
@@ -863,11 +910,22 @@ class MainWindow(QMainWindow):
         self.ax1.yaxis.set_visible(False)
         self.ax1.axvline(x=0, linestyle='dashed', color='gray', alpha=0.8)
 
-        lengthPeaks = [0]
+        allPeaks = []
+        lengthPeaks = []
         for n, peaksExtracted in enumerate(self.peaksExtractedList):
             posPeaks = peaksExtracted.get_offsets()
-            for i in range(1, len(posPeaks)):
-                distance = Point(posPeaks[i]).distance(Point(posPeaks[i-1])) * self.scalePixel
+
+            allPeaks.extend(posPeaks)
+
+            if len(lengthPeaks) == 0:
+                lengthPeaks.append(0)
+            else:
+                lengthPeaks.append(lengthPeaks[-1])
+                #lengthPeaks.append(lengthPeaks[-1] + Point(allPeaks[-1]).distance(Point(posPeaks[0])) * self.scalePixel)
+
+            self.ax1.axvline(x=lengthPeaks[-1], linestyle='dashed', color='gray', alpha=0.8)
+            for i in range(0, len(posPeaks)-1):
+                distance = Point(posPeaks[i]).distance(Point(posPeaks[i+1])) * self.scalePixel
                 lengthPeaks.append(lengthPeaks[-1] + distance)
             self.ax1.axvline(x=lengthPeaks[-1], linestyle='dashed', color='gray', alpha=0.8)
 
@@ -961,15 +1019,17 @@ class MainWindow(QMainWindow):
                                                label='PeaksSegment%02d'%self.segmentNumb)
         self.peaksExtractedList.append(self.peaksExtracted)
 
-        text_line.CurvedText(
-            x=[x[0], x[-1]],
-            y=[y[0], y[-1]],
-            text='Segment %02d'%self.segmentNumb,
-            va='bottom',
-            axes=self.ax0,
-            alpha=self.alpha_default,
-            color='blue'
-        )
+
+        dx = x[-1] - x[0]
+        dy = y[-1] - y[0]
+        angle = np.rad2deg(np.arctan2(dy, dx))
+        right = line.parallel_offset(10, 'right')
+        self.ax0.plot(right.xy[0],right.xy[1])
+        #text = self.ax0.text(x[0], y[0], 'Segment %02d'%self.segmentNumb, ha='left', va='bottom', fontsize=12,
+        text = self.ax0.text(right.boundary[1].xy[0][0], right.boundary[1].xy[1][0], 'Segment %02d'%self.segmentNumb, ha='left', va='bottom', fontsize=12,
+                 transform_rotates_text=True, rotation=angle, rotation_mode='anchor', clip_on=True,
+                 alpha=self.alpha_default, color='b')
+        self.segmentTextList.append(text)
 
         self.line_object.remove()
         self.line_object = None
@@ -1000,6 +1060,8 @@ class MainWindow(QMainWindow):
         self.buttonDefineScaleValue.setEnabled(False)
         self.buttonDefineScale.setEnabled(False)
 
+        self.buttonDeleteLastSegment.setEnabled(True)
+
     #------------------------------------------------------------------
     def save(self):
         base=os.path.basename(self.imageFileName)
@@ -1020,7 +1082,7 @@ class MainWindow(QMainWindow):
         file1.write("# Detected scale length in pixel: %d\n" %(self.scaleLength))
         file1.write("#================================================\n")
 
-        file1.write("n,xpos,ypos,segment,indice_in_segment,distance\n")
+        file1.write("n,xpos,ypos,segment,peakNumbInSegment,distance\n")
         c = 1
         for n, peaksExtracted in enumerate(self.peaksExtractedList):
             posPeaks = peaksExtracted.get_offsets()
@@ -1035,6 +1097,27 @@ class MainWindow(QMainWindow):
 
         print("Saved csv file: " + file1NameCSV)
         
+    #------------------------------------------------------------------
+    def deleteLastSegment(self):
+
+        self.segmentList[-1].remove()
+        self.segmentTextList[-1].remove()
+        self.peaksExtractedList[-1].remove()
+        self.canvas.draw()
+
+        del self.peaksExtractedList[-1]
+        del self.segmentList[-1]
+        del self.segmentTextList[-1]
+        self.segmentNumb -=1
+
+        self.update_peaksExtractedPlot()
+
+        if len(self.segmentList) == 0:
+            self.ax1.clear()
+            self.ax1.set_visible(False)
+            self.buttonDeleteLastSegment.setEnabled(False)
+            self.buttonSave.setEnabled(False)
+
     #------------------------------------------------------------------
     def openFileNameDialog(self):
         options = QFileDialog.Options()
