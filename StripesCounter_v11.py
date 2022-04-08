@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+
 
 #=================================================================
 # Author: Patrick Brockmann CEA/DRF/LSCE - April 2021
@@ -1150,34 +1150,46 @@ class MainWindow(QMainWindow):
 
     #------------------------------------------------------------------
     def aboutCall(self):
-        msg = " StripesCounter " + version + """ 
+        msg = "<h4>StripesCounter " + version + "</h4>" + """ 
 
-         * Open an image, optionnaly with a scale and value scale annotation
-         * Pan the image from a mouse click
-         * Zoom in or out with wheel zoom (or 2 fingers pad actions)
-         * Enhance the image from brightness and contrast sliders
-         * Create a profile segment by double clicking
-         * At the 2nd point, the profile to be extracted is drawn as a red segment 
-         * The segment can be modified (moved, shifted) by pressing the segment
-           itself or its start or end points 
-         * A profile of the image is drawn corresponding to the profile segment 
-         * Number of peaks are counted from the smoothed profile
-         * Adapt various parameters for peaks detection and profile smoothing 
-         * Control the width of the profile segment 
-         * Inspect detected peaks with a mouse over from image or profile 
-         * Define new scale and scale value if needed
-         * Extract the peaks
-         * Modify the extracted peaks by clicking on peaks
-           - right click on segment to add a peak
-           - left click on a peak to delete it
-         * Add a new profile segment and repeat the process
-         * Extracted peaks are considered from contiguous segments 
-         * Save the peaks and stripes in a csv file
-         * Capture the image
+Here are the different steps :
+<ul>
+<li>Open an image, optionnaly with a scale and value scale annotation.
+<li>Pan the image from a mouse click.
+<li>Zoom in or out with wheel zoom (or 2 fingers pad actions).
+<li>Enhance the image from brightness and contrast sliders.
+<li>Create a profile segment by double clicking.
+<li>At the 2nd point, the profile to be extracted is drawn as a red segment. 
+<li>The segment can be modified (moved, shifted) by pressing the segment itself 
+or its start or end points.
+<li>A profile of the image is drawn corresponding to the profile segment.
+<li>Number of peaks are counted from the smoothed profile.
+<li>Adapt various parameters for peaks detection and profile smoothing. 
+<li>Control the width of the profile segment. 
+<li>Inspect detected peaks with a mouse over from image or profile. 
+<li>Define new scale and scale value if needed.
+<li>Extract the peaks.
+<li>Modify the extracted peaks by clicking on peaks :
+     <ul>
+     <li>right click on segment to add a peak,
+     <li>left click on a peak to delete it.
+     </ul>
+<li>Add a new profile segment and repeat the process.
+<li>Extracted peaks are considered from contiguous segments. 
+<li>Save the peaks and stripes in a csv file.
+<li>Capture the image.
+</ul>
 
-         * Developped by Patrick Brockmann (LSCE)
-        """
-        QMessageBox.about(self, "About the StripesCounter", msg.strip())
+Developped by Patrick Brockmann (LSCE)
+"""
+
+        msgBox = QMessageBox(self)
+        #msgBox.setIcon(QMessageBox.Information)
+        msgBox.setTextFormat(Qt.RichText)
+        msgBox.setText(msg)
+        msgBox.setWindowTitle("About the StripesCounter")
+        msgBox.setStandardButtons(QMessageBox.Ok)
+        msgBox.exec()
 
 #======================================================
 if __name__ == "__main__":
