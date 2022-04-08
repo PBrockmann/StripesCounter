@@ -1156,19 +1156,24 @@ class MainWindow(QMainWindow):
          * Pan the image from a mouse click
          * Zoom in or out with wheel zoom (or 2 fingers pad actions)
          * Enhance the image from brightness and contrast sliders
-         * Create a profile line by double clicking
-         * At the 2nd point, the profile to be extracted is drawn as a red line
-         * The profile of the image is drawn corresponding to the profile line 
-         * Add segments to the profile line by double clicking on it
-               - left double clicking to add a control point
-               - right double clicking to remove a control point 
-         * Number of peaks (stripes) are counted from the smoothed profile
-         * Adapt various parameters for peak dectection and smoothing
-         * Move, modify the profile line and control points if needed
-         * Control the width of the profile line
+         * Create a profile segment by double clicking
+         * At the 2nd point, the profile to be extracted is drawn as a red segment 
+         * The segment can be modified (moved, shifted) by pressing the segment
+           itself or its start or end points 
+         * A profile of the image is drawn corresponding to the profile segment 
+         * Number of peaks are counted from the smoothed profile
+         * Adapt various parameters for peaks detection and profile smoothing 
+         * Control the width of the profile segment 
          * Inspect detected peaks with a mouse over from image or profile 
          * Define new scale and scale value if needed
-         * Save the image and the data points, visualize the extracted profile
+         * Extract the peaks
+         * Modify the extracted peaks by clicking on peaks
+           - right click on segment to add a peak
+           - left click on a peak to delete it
+         * Add a new profile segment and repeat the process
+         * Extracted peaks are considered from contiguous segments 
+         * Save the peaks and stripes in a csv file
+         * Capture the image
 
          * Developped by Patrick Brockmann (LSCE)
         """
