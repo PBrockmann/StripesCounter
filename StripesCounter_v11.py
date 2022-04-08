@@ -233,13 +233,17 @@ class MainWindow(QMainWindow):
         self.buttonSave.setMaximumWidth(maximumWidth)
         self.buttonSave.clicked.connect(self.save)
 
-        self.buttonCapture = QPushButton('Capture image')
+        self.buttonCapture = QPushButton('Capture displayed image')
         self.buttonCapture.setMaximumWidth(maximumWidth)
         self.buttonCapture.clicked.connect(self.capture)
 
         self.buttonDeleteLastSegment = QPushButton('Delete last segment')
         self.buttonDeleteLastSegment.setMaximumWidth(maximumWidth)
         self.buttonDeleteLastSegment.clicked.connect(self.deleteLastSegment)
+
+        self.buttonSaveFullImage = QPushButton('Save image with segments and peaks')
+        self.buttonSaveFullImage.setMaximumWidth(maximumWidth)
+        self.buttonSaveFullImage.clicked.connect(self.saveFullImage)
 
         layoutH = QHBoxLayout()
 
@@ -279,6 +283,8 @@ class MainWindow(QMainWindow):
         layoutV2.addWidget(self.buttonCapture)
         layoutV2.addSpacing(20)
         layoutV2.addWidget(self.buttonDeleteLastSegment)
+        layoutV2.addSpacing(20)
+        layoutV2.addWidget(self.buttonSaveFullImage)
 
         layoutH.addLayout(layoutV1)
         layoutH.addLayout(layoutV2)
@@ -370,6 +376,7 @@ class MainWindow(QMainWindow):
         self.buttonExtract.setEnabled(False)
         self.buttonSave.setEnabled(False)
         self.buttonDeleteLastSegment.setEnabled(False)
+        self.buttonSaveFullImage.setEnabled(False)
 
         self.mySliderKernelSize.setValue(self.kernelSize)
         self.mySliderProfileLinewidth.setValue(self.profileLinewidth)
@@ -782,6 +789,7 @@ class MainWindow(QMainWindow):
          
             self.ax1.grid(linestyle='dotted')
             self.ax1.axhline(self.peakutils_thres, color="b", lw=1, linestyle='solid', alpha=0.8)
+            self.ax1.yaxis.set_visible(True)
 
             self.labelKernelSize.setEnabled(True)
             self.mySliderKernelSize.setEnabled(True)
@@ -797,7 +805,7 @@ class MainWindow(QMainWindow):
             self.buttonDefineScale.setEnabled(True)
             self.buttonCapture.setEnabled(True)
             self.buttonExtract.setEnabled(True)
-            self.buttonSave.setEnabled(True)
+            self.buttonSaveFullImage.setEnabled(True)
 
             self.canvas.draw()
 
@@ -964,9 +972,9 @@ class MainWindow(QMainWindow):
         self.ax0.clear()
         self.ax0.set_visible(True)
 
-        img = cv2.imread(self.imageFileName)
-        (self.mx, self.my) = np.meshgrid(np.arange(img.shape[1]), np.arange(img.shape[0]))
-        self.gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        self.image = cv2.imread(self.imageFileName)
+        (self.mx, self.my) = np.meshgrid(np.arange(self.image.shape[1]), np.arange(self.image.shape[0]))
+        self.gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
         mask0 = cv2.inRange(self.gray, 0, 0)
         self.mask = cv2.bitwise_not(mask0)
         self.alphaLevel =  self.mySliderAlpha.value()/10.
@@ -992,7 +1000,7 @@ class MainWindow(QMainWindow):
     #------------------------------------------------------------------
     def capture(self):
         base=os.path.basename(self.imageFileName)
-        file1Name = os.path.splitext(base)[0] + "_StripesCounterFile_{}.png"
+        file1Name = os.path.splitext(base)[0] + "_StripesCounterFile_capture_{}.png"
         while os.path.isfile(file1Name.format("%02d" %self.counterFilename)):
             self.counterFilename += 1
 
@@ -1002,8 +1010,51 @@ class MainWindow(QMainWindow):
         bbox = Bbox([[0.0, 2.6], [8.2, 7.6]])
         plt.savefig(file1NamePNG, bbox_inches=bbox)
 
-        print("Saved png file: " + file1NamePNG)
+        #print("Saved png file: " + file1NamePNG)
+        msgBox = QMessageBox(self)
+        msgBox.setTextFormat(Qt.RichText)
+        msgBox.setText("Saved png file :<br>" + file1NamePNG)
+        msgBox.setWindowTitle("Capture message")
+        msgBox.setStandardButtons(QMessageBox.Ok)
+        msgBox.exec()
         
+    #------------------------------------------------------------------
+    def saveFullImage(self):
+        base=os.path.basename(self.imageFileName)
+        file1Name = os.path.splitext(base)[0] + "_StripesCounterFile_image_{}.png"
+        while os.path.isfile(file1Name.format("%02d" %self.counterFilename)):
+            self.counterFilename += 1
+
+        file1NamePNG = file1Name.format("%02d" %self.counterFilename)
+
+        for segment in self.segmentList:
+             xdata = list(segment.get_xdata())
+             ydata = list(segment.get_ydata())
+             x0 = round(xdata[0])
+             y0 = round(ydata[0])
+             x1 = round(xdata[1])
+             y1 = round(ydata[1])
+             cv2.line(self.image, pt1=(x0, y0), pt2=(x1, y1), color=(255,0,0),
+                      thickness=1, lineType=cv2.LINE_AA)
+
+        peaksExtractedAllList = [sc.get_offsets() for sc in self.peaksExtractedList]  # all all peaks as a unique list
+        peaksExtractedAll = np.concatenate(peaksExtractedAllList)    
+        for p in peaksExtractedAll:
+             x0 = round(p[0])
+             y0 = round(p[1])
+             cv2.drawMarker(self.image, (x0, y0), color=(255,0,0), 
+                            markerType=cv2.MARKER_TILTED_CROSS, markerSize=10, thickness=1, line_type=cv2.LINE_AA)
+
+        cv2.imwrite(file1NamePNG, self.image)
+
+        #print("Saved png file: " + file1NamePNG)
+        msgBox = QMessageBox(self)
+        msgBox.setTextFormat(Qt.RichText)
+        msgBox.setText("Saved png file :<br>" + file1NamePNG)
+        msgBox.setWindowTitle("Capture message")
+        msgBox.setStandardButtons(QMessageBox.Ok)
+        msgBox.exec()
+
     #------------------------------------------------------------------
     def extract(self):
         if len(self.indexes) < 2:       # if not at least 2 peaks (cannot draw segment)
@@ -1071,6 +1122,7 @@ class MainWindow(QMainWindow):
         self.buttonDefineScale.setEnabled(False)
 
         self.buttonDeleteLastSegment.setEnabled(True)
+        self.buttonSave.setEnabled(True)
 
     #------------------------------------------------------------------
     def save(self):
@@ -1106,13 +1158,20 @@ class MainWindow(QMainWindow):
                 else:
                     stripeLength = distance - distancePrevious
                 distanceCumulated += stripeLength
-                file1.write('%05d,%05.7f,%05.7f,%03d,%03d,%05.7f,%05.7f,%05.7f\n'%(n, x, y, s+1, i+1, distance, distanceCumulated, stripeLength))
+                file1.write('%05d,%014.7f,%014.7f,%03d,%03d,%014.7f,%014.7f,%014.7f\n'%(n, x, y, s+1, i+1, distance, distanceCumulated, stripeLength))
                 distancePrevious = distance
                 n += 1
 
         file1.close()
 
-        print("Saved csv file: " + file1NameCSV)
+        #print("Saved csv file: " + file1NameCSV)
+        msgBox = QMessageBox(self)
+        msgBox.setTextFormat(Qt.RichText)
+        msgBox.setText("Saved csv file :<br>" + file1NameCSV)
+        msgBox.setWindowTitle("Save message")
+        msgBox.setStandardButtons(QMessageBox.Ok)
+        msgBox.exec()
+        
         
     #------------------------------------------------------------------
     def deleteLastSegment(self):
@@ -1184,7 +1243,6 @@ Developped by Patrick Brockmann (LSCE)
 """
 
         msgBox = QMessageBox(self)
-        #msgBox.setIcon(QMessageBox.Information)
         msgBox.setTextFormat(Qt.RichText)
         msgBox.setText(msg)
         msgBox.setWindowTitle("About the StripesCounter")
