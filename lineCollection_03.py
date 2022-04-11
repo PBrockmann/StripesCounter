@@ -23,7 +23,7 @@ ax.add_collection(segmentsCollection)
 ticksCollectionList = []
 
 #----------------------------
-segs2 = [ [[2,5],[6,8]], [[1,2],[6,4]], [[2,2],[8,2]] ]
+segs2 = [ [[2,5],[6,8]], [[1,1],[8,8]], [[2,2],[8,2]] ]
 segmentsCollection.set_segments(segs2)
 
 ticksCollectionList.append(LineCollection([], color='b'))
@@ -36,6 +36,23 @@ ticksCollectionList.append(LineCollection([], color='b'))
 ax.add_collection(ticksCollectionList[2])
 
 tickOver = None
+
+#=======================================================
+def draw_ticks(segment, xList, yList, length=0.25):
+    line = LineString(segment)   
+    left = line.parallel_offset(length, 'left')
+    right0 = line.parallel_offset(length, 'right')
+    right = LineString([right0.boundary.geoms[1], right0.boundary.geoms[0]]) # flip because 'right' orientation
+    ticks = []
+    for i,x in enumerate(xList):
+        p = Point(xList[i],yList[i])
+        a = left.interpolate(line.project(p))
+        b = right.interpolate(line.project(p))
+        ticks.append(LineString([a, p, b]).coords)           # keep p point to sort from distance later
+    return ticks
+
+a = draw_ticks(segmentsCollection.get_segments()[1], [3,4,5], [3,4,5])
+ticksCollectionList[1].set_segments(a)
 
 #=======================================================
 def draw_tick(segment, x, y, length=0.25):
@@ -63,15 +80,8 @@ def onpress(event):
             tick = draw_tick(segment, x0, y0)
             ticks = ticksCollectionList[i].get_segments()
             ticks.append(tick.coords)
-
-            ticksDistance = []
-            for p in ticks:
-                distance = Point(segment[0][0], segment[0][1]).distance(Point(p[1]))
-                ticksDistance.append(distance)
-            sortIndices = np.argsort(ticksDistance)
-            ticksSorted = np.array(ticks)[sortIndices]
-
-            ticksCollectionList[i].set_segments(ticksSorted)
+            ticksCollectionList[i].set_segments(ticks)
+            sortTicksFromSegment(i)
             fig.canvas.draw()
 
     # ticks
@@ -115,17 +125,18 @@ def onmotion(event):
             break
 
 #=======================================================
-def sortTicks(segment, segmentNum):
-    ticks = ticksCollection.get_segments()
-    posDistance = []
-    for n,p in enumerate(ticks):
-        if ticksInSegment[n] == segmentNum:
-            distance = Point(segment[0], segment[1]).distance(Point(p.coords))
-            posDistance.append(distance)
-            sortIndices = np.argsort(posDistance)
-            newPosTicks = newPosTicks[sortIndices]
+def sortTicksFromSegment(segmentNum):
+    segment = segmentsCollection.get_segments()[segmentNum]
+    ticks = ticksCollectionList[segmentNum].get_segments()
 
-    ticksCollection.set_segments(newTicks)
+    ticksDistance = []
+    for p in ticks:
+        distance = Point(segment[0][0], segment[0][1]).distance(Point(p[1]))     # p[1] is on the segment
+        ticksDistance.append(distance)
+    sortIndices = np.argsort(ticksDistance)
+    ticksSorted = np.array(ticks)[sortIndices]
+
+    ticksCollectionList[segmentNum].set_segments(ticksSorted)
 
 #=======================================================
 fig.canvas.mpl_connect('button_press_event', onpress)
