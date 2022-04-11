@@ -74,10 +74,12 @@ def onpress(event):
         i = ind["ind"][0]
         #print("segment", ind, i)
         if event.button is MouseButton.LEFT:
-            x0 = event.xdata
-            y0 = event.ydata
+            point = Point(event.xdata, event.ydata)
             segment = segmentsCollection.get_segments()[i]
-            tick = draw_tick(segment, x0, y0)
+            line = LineString(segment)   
+            # Closest point on the line
+            newPoint = line.interpolate(line.project(point))
+            tick = draw_tick(segment, newPoint.coords[0][0], newPoint.coords[0][1])
             ticks = ticksCollectionList[i].get_segments()
             ticks.append(tick.coords)
             ticksCollectionList[i].set_segments(ticks)
