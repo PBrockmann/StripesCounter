@@ -546,7 +546,7 @@ class MainWindow(QMainWindow):
                     i = ind["ind"][0]
                     pos = peaksExtracted.get_offsets()[i]
                     self.peakExtractedOver0 = self.ax0.scatter(pos[0], pos[1], marker='o', 
-                                                      c='yellow', s=30, zorder=0, alpha=0.8)
+                                                      c='yellow', s=30, zorder=12, alpha=0.8)
                     pos = self.peaksExtracted1.get_offsets()[i+offset]
                     self.peakExtractedOver1 = self.ax1.scatter(pos[0], pos[1],
                                                       c='yellow', s=200, edgecolors='b', lw=1, alpha=0.8, zorder=0)
@@ -1069,7 +1069,7 @@ class MainWindow(QMainWindow):
         self.segment, = self.ax0.plot([x[0], x[-1]], [y[0], y[-1]], c='b', lw=2, alpha=self.alpha_default, zorder=0,
                                       label='Segment%02d'%self.segmentNumb)
         self.segmentList.append(self.segment)
-        self.peaksExtracted = self.ax0.scatter(x, y, c='b', marker='o', s=30, zorder=12, alpha=0,
+        self.peaksExtracted = self.ax0.scatter(x, y, c='b', marker='o', s=10, zorder=12, alpha=self.alpha_default,
                                                label='PeaksSegment%02d'%self.segmentNumb)
         self.peaksExtractedList.append(self.peaksExtracted)
 
