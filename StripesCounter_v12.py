@@ -1,7 +1,7 @@
 
 
 #=================================================================
-# Author: Patrick Brockmann CEA/DRF/LSCE - April 2021
+# Author: Patrick Brockmann CEA/DRF/LSCE - April 2022
 #=================================================================
 
 import sys, os
@@ -21,6 +21,7 @@ try:
     from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
     from matplotlib.figure import Figure
     from matplotlib.transforms import Bbox
+    from matplotlib.collections import LineCollection
     import matplotlib.patches as patches
     import matplotlib.pyplot as plt
     
@@ -39,8 +40,24 @@ except:
     sys.exit()
 
 #======================================================
-version = "v11.30"
+version = "v12.00"
 maximumWidth = 250
+
+#======================================================
+def draw_ticks(segment, xList, yList, length=5):
+    xdata = list(segment.get_xdata())
+    ydata = list(segment.get_ydata())
+    line = LineString([(xdata[0], ydata[0]), (xdata[1], ydata[1])])
+    left = line.parallel_offset(length, 'left')
+    right0 = line.parallel_offset(length, 'right')
+    right = LineString([right0.boundary.geoms[1], right0.boundary.geoms[0]]) # flip because 'right' orientation
+    ticks = []
+    for i,x in enumerate(xList):
+        p = Point(xList[i],yList[i])
+        a = left.interpolate(line.project(p))
+        b = right.interpolate(line.project(p))
+        ticks.append(LineString([a, p, b]).coords)           # keep p point to sort from distance later
+    return ticks
 
 #======================================================
 class MainWindow(QMainWindow):
@@ -305,6 +322,8 @@ class MainWindow(QMainWindow):
         self.peakExtractedOver0 = None
         self.peaksExtracted1 = None
         self.peakExtractedOver1 = None
+        self.ticksCollectionList = []
+        self.tickOver = None
 
         self.line1 = self.line2 = self.line3 = None
         self.counterFilename = 1
@@ -492,6 +511,9 @@ class MainWindow(QMainWindow):
         if self.peakExtractedOver1 != None:
             self.peakExtractedOver1.remove()
             self.peakExtractedOver1 = None
+        if self.tickOver != None:
+            self.tickOver.remove()
+            self.tickOver = None
         self.canvas.draw()
 
     #------------------------------------------------------------------
@@ -524,7 +546,7 @@ class MainWindow(QMainWindow):
                     i = ind["ind"][0]
                     pos = peaksExtracted.get_offsets()[i]
                     self.peakExtractedOver0 = self.ax0.scatter(pos[0], pos[1], marker='o', 
-                                                      c='yellow', s=30, zorder=12)
+                                                      c='yellow', s=30, zorder=0, alpha=0.8)
                     pos = self.peaksExtracted1.get_offsets()[i+offset]
                     self.peakExtractedOver1 = self.ax1.scatter(pos[0], pos[1],
                                                       c='yellow', s=200, edgecolors='b', lw=1, alpha=0.8, zorder=0)
@@ -540,10 +562,10 @@ class MainWindow(QMainWindow):
                 pos = self.peaksExtracted1.get_offsets()[i]
                 self.peakExtractedOver1 = self.ax1.scatter(pos[0], pos[1], marker='o', 
                                                   c='yellow', s=200, edgecolors='b', lw=1, alpha=0.8, zorder=0)
-                peaksExtractedAllList = [sc.get_offsets() for sc in self.peaksExtractedList]  # all all peaks as a unique list
+                peaksExtractedAllList = [sc.get_offsets() for sc in self.peaksExtractedList]  # all peaks as a unique list
                 peaksExtractedAll = np.concatenate(peaksExtractedAllList)    
                 self.peakExtractedOver0 = self.ax0.scatter(peaksExtractedAll[i][0], peaksExtractedAll[i][1], marker='o', 
-                                                  c='yellow', s=30, zorder=12)
+                                                  c='yellow', s=30, alpha=0.8, zorder=12)
                 self.canvas.draw()
 
         #----------------------------------------------
@@ -641,6 +663,10 @@ class MainWindow(QMainWindow):
                       newPoint = lineString.interpolate(lineString.project(point))
                       posPeaks = self.peaksExtractedList[n].get_offsets()
                       newPosPeaks = np.concatenate([posPeaks, np.array(newPoint.coords, ndmin=2)])
+                      # Ticks
+                      tick = draw_ticks(segment, [newPoint.coords[0][0]], [newPoint.coords[0][1]])
+                      ticks = self.ticksCollectionList[n].get_segments()
+                      ticks.append(tick[0])
                       # sort peaks along the segment after peak add
                       posDistance = []
                       for p in newPosPeaks:
@@ -649,6 +675,8 @@ class MainWindow(QMainWindow):
                       sortIndices = np.argsort(posDistance)
                       newPosPeaks = newPosPeaks[sortIndices]
                       self.peaksExtractedList[n].set_offsets(newPosPeaks)
+                      newTicks = np.array(ticks)[sortIndices]
+                      self.ticksCollectionList[n].set_segments(newTicks)
                       self.canvas.draw()
                       self.update_peaksExtractedPlot()
                    break
@@ -661,9 +689,12 @@ class MainWindow(QMainWindow):
                    if self.mousepress == "right":
                       i = ind["ind"][0]
                       posPeaks = peaksExtracted.get_offsets()
+                      ticks = self.ticksCollectionList[n].get_segments()
                       if len(posPeaks) > 2:
                           newPosPeaks = np.delete(posPeaks, i, axis=0)
                           self.peaksExtractedList[n].set_offsets(newPosPeaks)
+                          del ticks[i]
+                          self.ticksCollectionList[n].set_segments(ticks)
                           self.canvas.draw()
                           self.update_peaksExtractedPlot()
                    break
@@ -913,7 +944,6 @@ class MainWindow(QMainWindow):
         self.ax1.plot(lengthPeaks, [0]*len(lengthPeaks), marker='o', c='b', alpha=self.alpha_default, markersize=5)
         self.peaksExtracted1 = self.ax1.scatter(lengthPeaks, [0]*len(lengthPeaks), marker='o', c='b', alpha=self.alpha_default, s=5)
 
-
         peaksNb = len(lengthPeaks)
         self.line1 = "Number of peaks: %3d" %(peaksNb)
         if peaksNb > 1:
@@ -998,13 +1028,15 @@ class MainWindow(QMainWindow):
              cv2.line(self.image, pt1=(x0, y0), pt2=(x1, y1), color=(255,0,0),
                       thickness=1, lineType=cv2.LINE_AA)
 
-        peaksExtractedAllList = [sc.get_offsets() for sc in self.peaksExtractedList]  # all all peaks as a unique list
-        peaksExtractedAll = np.concatenate(peaksExtractedAllList)    
-        for p in peaksExtractedAll:
-             x0 = round(p[0])
-             y0 = round(p[1])
-             cv2.drawMarker(self.image, (x0, y0), color=(255,0,0), 
-                            markerType=cv2.MARKER_TILTED_CROSS, markerSize=10, thickness=1, line_type=cv2.LINE_AA)
+        for ticksCollection in self.ticksCollectionList:
+             ticks = ticksCollection.get_segments()
+             for n,t in enumerate(ticks):
+                 x0 = round(t[0][0])
+                 y0 = round(t[0][1])
+                 x1 = round(t[2][0])        # get bounds of the tick
+                 y1 = round(t[2][1])
+                 cv2.line(self.image, pt1=(x0, y0), pt2=(x1, y1), color=(255,0,0),
+                       thickness=1, lineType=cv2.LINE_AA)
 
         cv2.imwrite(file1NamePNG, self.image)
 
@@ -1037,16 +1069,20 @@ class MainWindow(QMainWindow):
         self.segment, = self.ax0.plot([x[0], x[-1]], [y[0], y[-1]], c='b', lw=2, alpha=self.alpha_default, zorder=0,
                                       label='Segment%02d'%self.segmentNumb)
         self.segmentList.append(self.segment)
-        self.peaksExtracted = self.ax0.scatter(x, y, c='b', marker='o', alpha=self.alpha_default, s=30, zorder=12,
+        self.peaksExtracted = self.ax0.scatter(x, y, c='b', marker='o', s=30, zorder=12, alpha=0,
                                                label='PeaksSegment%02d'%self.segmentNumb)
         self.peaksExtractedList.append(self.peaksExtracted)
+
+        # ticks
+        ticks = draw_ticks(self.segment, x, y)
+        ticksCollection = LineCollection(ticks, color='b', alpha=self.alpha_default)
+        self.ticksCollectionList.append(ticksCollection)
+        self.ax0.add_collection(ticksCollection)
 
         dx = x[-1] - x[0]
         dy = y[-1] - y[0]
         angle = np.rad2deg(np.arctan2(dy, dx))
         right = line.parallel_offset(10, 'right')
-        #self.ax0.plot(right.xy[0],right.xy[1], c='g')
-        #text = self.ax0.text(x[0], y[0], 'Segment %02d'%self.segmentNumb, ha='left', va='bottom', fontsize=12,
         text = self.ax0.text(right.boundary.geoms[1].xy[0][0], right.boundary.geoms[1].xy[1][0], 
                  'Segment %02d'%self.segmentNumb, ha='left', va='bottom', fontsize=12,
                  transform_rotates_text=True, rotation=angle, rotation_mode='anchor', clip_on=True,
