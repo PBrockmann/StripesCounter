@@ -1,43 +1,48 @@
 # StripesCounter
 
-A PyQt Matplotlib python application to count stripes from microscopic images
+A PyQt Matplotlib python application to detect automatically peaks from
+multiple profile segments, modify extracted peaks and count stripes from 
+microscopic images
 
- * Automatic detection of the scale length and scale value
- * Display of the microscopic image with a grayscale color map
- * Control of the contrast and the brightness of the image
- * Definition of a profil line from mouse double clicks
- * Add/Remove points to define a segmented profil
- * Move the profil by picking its line or its control points
- * Smooth the intensity calcul from the control of the profil line width
- * Extraction of the profil
- * Smoothing (convolution) from a variable length kernel
- * Detection of the number of the peaks (number of stripes)
- * Display of detected peaks on image
- * Growth rate display
+![ScreenShot](StripesCounter_v11.gif)  
 
-![ScreenShot](StripesCounter_v10.8.gif)  
+Here are the different steps :
 
-Usage :
-
- * Open an image, optionnaly with a scale and value scale annotation
- * Pan the image from a mouse click
- * Zoom in or out with wheel zoom (or 2 fingers pad actions)
- * Enhance the image from brightness and contrast sliders
- * Create a profil line by double clicking
- * At the 2nd point, the profil to be extracted is drawn as a red line
- * The profil of the image is drawn corresponding to the profil line 
- * Add segments to the profil line by double clicking on it
-   * left double clicking to add a control point
-   * right double clicking to remove a control point 
- * Number of peaks (stripes) are counted from the smoothed profil
- * Adapt various parameters for peak dectection and smoothing
- * Move, modify the profil line and control points if needed
- * Control the width of the profil line
- * Inspect detected peaks with a mouse over from image or profil
- * Define new scale and scale value if needed
- * Save the image and the data points, visualize the extracted profil
+* Open an image, optionnaly with a scale and value scale annotation.
+* Pan the image from a mouse click.
+* Zoom in or out with wheel zoom (or 2 fingers pad actions).
+* Enhance the image from brightness and contrast sliders.
+* Create a profile segment by double clicking to create control points.
+* After the 2nd point created, the profile to be extracted is drawn as a red segment. 
+* The segment can be modified (moved, shifted) by pressing the segment itself or its start or end control points.
+* An intensity profile is extracted from the the image along the profile segment.
+* Number of peaks are counted from the smoothed profile.
+* Adapt various parameters for peaks detection and profile smoothing. 
+* Control the width of the profile segment to integrate. 
+* Inspect detected peaks with a mouse over from the image or the profile. 
+* Define new scale and scale value if needed.
+* Extract the peaks
+* Modify the extracted peaks by clicking on peaks :
+  * right click on segment to add a peak,
+  * left click on a peak to delete it.
+* Add a new profile segment and repeat the process.
+* Extracted peaks are considered from contiguous segments. 
+* Save the "peaks and stripes" in a csv file.
+* Reload a saved "peaks and stripes" csv file.
+* Capture the image displayed in the application.
+* Save the original image with segments and peaks.
 
 ## Release notes
+
+v11.50
+ * New mode: multiple segments
+ * Add/Delete extracted peaks
+ * Ticks on segments
+ * Export image with segments and peaks
+ * Load/save segments and peaks
+
+v10.93
+ * Various fixes
 
 v10.82
  * Smaller radius for control points

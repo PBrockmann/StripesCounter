@@ -1,7 +1,7 @@
 
 
 #=================================================================
-# Author: Patrick Brockmann CEA/DRF/LSCE - April 2021
+# Author: Patrick Brockmann CEA/DRF/LSCE - April 2022
 #=================================================================
 
 import sys, os
@@ -21,6 +21,7 @@ try:
     from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
     from matplotlib.figure import Figure
     from matplotlib.transforms import Bbox
+    from matplotlib.collections import LineCollection
     import matplotlib.patches as patches
     import matplotlib.pyplot as plt
     
@@ -32,6 +33,7 @@ try:
     from shapely.geometry import Point, LineString
 
     import datetime
+    import pandas as pd
 
 except:
     print("Some modules have not been found:")
@@ -39,7 +41,7 @@ except:
     sys.exit()
 
 #======================================================
-version = "v11.30"
+version = "v11.50"
 maximumWidth = 250
 
 #======================================================
@@ -153,7 +155,7 @@ class MainWindow(QMainWindow):
         self.mySliderPeakUtils_thres.setTickPosition(QSlider.TicksBelow)
         self.mySliderPeakUtils_thres.valueChanged[int].connect(self.changeValuePeakUtils_thres)
 
-        self.cboxPeaks = QCheckBox("Display peaks on current profile")
+        self.cboxPeaks = QCheckBox("Display peaks on current segment")
         self.cboxPeaks.setChecked(False)
         self.cboxPeaks.toggled.connect(self.toggled_cboxPeaks)
 
@@ -186,11 +188,15 @@ class MainWindow(QMainWindow):
         self.buttonDefineScale.setMaximumWidth(maximumWidth)
         self.buttonDefineScale.clicked.connect(self.defineScale)
 
-        self.buttonExtract = QPushButton('Extract peaks')
+        self.buttonExtract = QPushButton('Extract peaks from profile')
         self.buttonExtract.setMaximumWidth(maximumWidth)
         self.buttonExtract.clicked.connect(self.extract)
 
-        self.buttonSave = QPushButton('Save peaks and stripes')
+        self.buttonLoad = QPushButton('Load segments and peaks')
+        self.buttonLoad.setMaximumWidth(maximumWidth)
+        self.buttonLoad.clicked.connect(self.load)
+
+        self.buttonSave = QPushButton('Save segments and peaks')
         self.buttonSave.setMaximumWidth(maximumWidth)
         self.buttonSave.clicked.connect(self.save)
 
@@ -239,6 +245,7 @@ class MainWindow(QMainWindow):
         layoutV2.addWidget(self.buttonDefineScale)
         layoutV2.addSpacing(20)
         layoutV2.addWidget(self.buttonExtract)
+        layoutV2.addWidget(self.buttonLoad)
         layoutV2.addWidget(self.buttonSave)
         layoutV2.addSpacing(20)
         layoutV2.addWidget(self.buttonCapture)
@@ -297,14 +304,14 @@ class MainWindow(QMainWindow):
         self.peakOver0 = None
         self.peakOver1 = None
         self.segmentNumb = 0
-        self.segment = None
         self.segmentList = []
         self.segmentTextList = []
-        self.peaksExtracted = None
         self.peaksExtractedList = []
         self.peakExtractedOver0 = None
         self.peaksExtracted1 = None
         self.peakExtractedOver1 = None
+        self.ticksCollectionList = []
+        self.tickOver = None
 
         self.line1 = self.line2 = self.line3 = None
         self.counterFilename = 1
@@ -336,6 +343,7 @@ class MainWindow(QMainWindow):
         self.buttonCapture.setEnabled(False)
         self.buttonExtract.setEnabled(False)
         self.buttonSave.setEnabled(False)
+        self.buttonLoad.setEnabled(False)
         self.buttonDeleteLastSegment.setEnabled(False)
         self.buttonSaveFullImage.setEnabled(False)
 
@@ -492,6 +500,9 @@ class MainWindow(QMainWindow):
         if self.peakExtractedOver1 != None:
             self.peakExtractedOver1.remove()
             self.peakExtractedOver1 = None
+        if self.tickOver != None:
+            self.tickOver.remove()
+            self.tickOver = None
         self.canvas.draw()
 
     #------------------------------------------------------------------
@@ -503,7 +514,7 @@ class MainWindow(QMainWindow):
         cont = False
         if event.inaxes == self.ax0 and self.peaks != None and self.cboxPeaks.isChecked():
             cont, ind = self.peaks.contains(event)
-        elif event.inaxes == self.ax1:
+        elif event.inaxes == self.ax1 and self.peaksCurve != None:
             cont, ind = self.peaksCurve.contains(event)
         if cont and self.peaks != None:
             i = ind["ind"][0]
@@ -524,7 +535,7 @@ class MainWindow(QMainWindow):
                     i = ind["ind"][0]
                     pos = peaksExtracted.get_offsets()[i]
                     self.peakExtractedOver0 = self.ax0.scatter(pos[0], pos[1], marker='o', 
-                                                      c='yellow', s=30, zorder=12)
+                                                      c='yellow', s=10, zorder=12)
                     pos = self.peaksExtracted1.get_offsets()[i+offset]
                     self.peakExtractedOver1 = self.ax1.scatter(pos[0], pos[1],
                                                       c='yellow', s=200, edgecolors='b', lw=1, alpha=0.8, zorder=0)
@@ -540,10 +551,10 @@ class MainWindow(QMainWindow):
                 pos = self.peaksExtracted1.get_offsets()[i]
                 self.peakExtractedOver1 = self.ax1.scatter(pos[0], pos[1], marker='o', 
                                                   c='yellow', s=200, edgecolors='b', lw=1, alpha=0.8, zorder=0)
-                peaksExtractedAllList = [sc.get_offsets() for sc in self.peaksExtractedList]  # all all peaks as a unique list
+                peaksExtractedAllList = [sc.get_offsets() for sc in self.peaksExtractedList]  # all peaks as a unique list
                 peaksExtractedAll = np.concatenate(peaksExtractedAllList)    
                 self.peakExtractedOver0 = self.ax0.scatter(peaksExtractedAll[i][0], peaksExtractedAll[i][1], marker='o', 
-                                                  c='yellow', s=30, zorder=12)
+                                                  c='yellow', s=10, zorder=12)
                 self.canvas.draw()
 
         #----------------------------------------------
@@ -635,12 +646,16 @@ class MainWindow(QMainWindow):
                    if self.mousepress == "left":
                       xdata = list(segment.get_xdata())
                       ydata = list(segment.get_ydata())
-                      lineString = LineString([(xdata[0], ydata[0]), (xdata[1], ydata[1])])
+                      line = LineString([(xdata[0], ydata[0]), (xdata[1], ydata[1])])
                       point = Point(event.xdata, event.ydata)
                       # Closest point on the line
-                      newPoint = lineString.interpolate(lineString.project(point))
+                      newPoint = line.interpolate(line.project(point))
                       posPeaks = self.peaksExtractedList[n].get_offsets()
                       newPosPeaks = np.concatenate([posPeaks, np.array(newPoint.coords, ndmin=2)])
+                      # Ticks
+                      tick = self.drawTicks(line, [newPoint.coords[0][0]], [newPoint.coords[0][1]])
+                      ticks = self.ticksCollectionList[n].get_segments()
+                      ticks.append(tick[0])
                       # sort peaks along the segment after peak add
                       posDistance = []
                       for p in newPosPeaks:
@@ -649,6 +664,8 @@ class MainWindow(QMainWindow):
                       sortIndices = np.argsort(posDistance)
                       newPosPeaks = newPosPeaks[sortIndices]
                       self.peaksExtractedList[n].set_offsets(newPosPeaks)
+                      newTicks = np.array(ticks)[sortIndices]
+                      self.ticksCollectionList[n].set_segments(newTicks)
                       self.canvas.draw()
                       self.update_peaksExtractedPlot()
                    break
@@ -661,24 +678,31 @@ class MainWindow(QMainWindow):
                    if self.mousepress == "right":
                       i = ind["ind"][0]
                       posPeaks = peaksExtracted.get_offsets()
+                      ticks = self.ticksCollectionList[n].get_segments()
                       if len(posPeaks) > 2:
                           newPosPeaks = np.delete(posPeaks, i, axis=0)
                           self.peaksExtractedList[n].set_offsets(newPosPeaks)
+                          del ticks[i]
+                          self.ticksCollectionList[n].set_segments(ticks)
                           self.canvas.draw()
                           self.update_peaksExtractedPlot()
                    break
+
+    #------------------------------------------------------------------
+    def defineScalePixel(self):
+        if self.scaleValue != 0. and self.scaleLength != 0:
+            self.scalePixel = self.scaleValue / self.scaleLength
+        else:
+            self.scalePixel = 1
 
     #------------------------------------------------------------------
     def drawProfile(self):
         if self.line_object is None:
             return 
 
-        try:
-            if self.scaleValue != 0. and self.scaleLength != 0:
-                self.scalePixel = self.scaleValue / self.scaleLength
-            else:
-                self.scalePixel = 1
+        self.defineScalePixel() 
 
+        try:
             xdata = list(self.line_object.get_xdata())
             ydata = list(self.line_object.get_ydata())
 
@@ -698,8 +722,8 @@ class MainWindow(QMainWindow):
             self.dist_profile = np.linspace(0, self.scalePixel*len(self.profile), num=len(self.profile))
 
             self.ax1.clear()
-            self.ax1.set_visible(True)
             self.ax1.set_facecolor('whitesmoke')
+            self.ax1.set_visible(True)
             
             if self.cboxReverseProfile.isChecked():
             	self.profile = 255 - self.profile
@@ -726,12 +750,12 @@ class MainWindow(QMainWindow):
                 self.peaks = None
 
             if self.cboxPeaks.isChecked():
-            	lineString = LineString([(xdata[0], ydata[0]), (xdata[1], ydata[1])])
+            	line = LineString([(xdata[0], ydata[0]), (xdata[1], ydata[1])])
             	points = []
             	for i in self.indexes:
                 	point = Point(self.profile_mx[i], self.profile_my[i])
                 	# Closest point on the line
-                	newPoint = lineString.interpolate(lineString.project(point))
+                	newPoint = line.interpolate(line.project(point))
                 	points.append(newPoint)
             	xs = [point.x for point in points]
             	ys = [point.y for point in points]
@@ -764,15 +788,26 @@ class MainWindow(QMainWindow):
             self.cboxReverseProfile.setEnabled(True)
             self.buttonDefineScaleValue.setEnabled(True)
             self.buttonDefineScale.setEnabled(True)
-            self.buttonCapture.setEnabled(True)
             self.buttonExtract.setEnabled(True)
-            self.buttonSaveFullImage.setEnabled(True)
 
             self.canvas.draw()
 
         except:
             #print("Error in drawProfile")
             return 
+
+    #------------------------------------------------------------------
+    def drawTicks(self, line, x, y, length=5):
+        left = line.parallel_offset(length, 'left')
+        right0 = line.parallel_offset(length, 'right')
+        right = LineString([right0.boundary.geoms[1], right0.boundary.geoms[0]]) # flip because 'right' orientation
+        ticks = []
+        for i in range(len(x)):
+            p = Point(x[i],y[i])
+            a = left.interpolate(line.project(p))
+            b = right.interpolate(line.project(p))
+            ticks.append(LineString([a, p, b]).coords)           # keep p point to sort from distance later
+        return ticks
 
     #------------------------------------------------------------------
     def openCall(self):
@@ -882,12 +917,13 @@ class MainWindow(QMainWindow):
         if self.profileLinewidth > 1:
             xdata = list(self.line_object.get_xdata())
             ydata = list(self.line_object.get_ydata())
-            lineString = LineString([(xdata[0], ydata[0]), (xdata[1], ydata[1])])
-            dilated = lineString.buffer(self.profileLinewidth/2., cap_style=2, join_style=1)
+            line = LineString([(xdata[0], ydata[0]), (xdata[1], ydata[1])])
+            dilated = line.buffer(self.profileLinewidth/2., cap_style=2, join_style=1)
             self.lineWithWidth, = self.ax0.plot(*dilated.exterior.xy, alpha=self.alpha_default, c='red', lw=2)
         
     #------------------------------------------------------------------
     def update_peaksExtractedPlot(self):
+        self.ax1.set_visible(True)
         self.ax1.clear()
         self.ax1.grid(linestyle='dotted')
         self.ax1.set_facecolor('whitesmoke')
@@ -912,7 +948,6 @@ class MainWindow(QMainWindow):
 
         self.ax1.plot(lengthPeaks, [0]*len(lengthPeaks), marker='o', c='b', alpha=self.alpha_default, markersize=5)
         self.peaksExtracted1 = self.ax1.scatter(lengthPeaks, [0]*len(lengthPeaks), marker='o', c='b', alpha=self.alpha_default, s=5)
-
 
         peaksNb = len(lengthPeaks)
         self.line1 = "Number of peaks: %3d" %(peaksNb)
@@ -955,6 +990,9 @@ class MainWindow(QMainWindow):
         self.mySliderAlpha.setEnabled(True)
         self.labelBeta.setEnabled(True)
         self.mySliderBeta.setEnabled(True)
+        self.buttonLoad.setEnabled(True)
+        self.buttonCapture.setEnabled(True)
+        self.buttonSaveFullImage.setEnabled(True)
 
         self.canvas.draw()
 
@@ -988,6 +1026,8 @@ class MainWindow(QMainWindow):
 
         file1NamePNG = file1Name.format("%02d" %self.counterFilename)
 
+        overlay = self.image.copy()
+
         for segment in self.segmentList:
              xdata = list(segment.get_xdata())
              ydata = list(segment.get_ydata())
@@ -995,18 +1035,24 @@ class MainWindow(QMainWindow):
              y0 = round(ydata[0])
              x1 = round(xdata[1])
              y1 = round(ydata[1])
-             cv2.line(self.image, pt1=(x0, y0), pt2=(x1, y1), color=(255,0,0),
+             cv2.line(overlay, pt1=(x0, y0), pt2=(x1, y1), color=(255,0,0),
                       thickness=1, lineType=cv2.LINE_AA)
 
-        peaksExtractedAllList = [sc.get_offsets() for sc in self.peaksExtractedList]  # all all peaks as a unique list
-        peaksExtractedAll = np.concatenate(peaksExtractedAllList)    
-        for p in peaksExtractedAll:
-             x0 = round(p[0])
-             y0 = round(p[1])
-             cv2.drawMarker(self.image, (x0, y0), color=(255,0,0), 
-                            markerType=cv2.MARKER_TILTED_CROSS, markerSize=10, thickness=1, line_type=cv2.LINE_AA)
+        for ticksCollection in self.ticksCollectionList:
+             ticks = ticksCollection.get_segments()
+             for n,t in enumerate(ticks):
+                 x0 = round(t[0][0])
+                 y0 = round(t[0][1])
+                 x1 = round(t[2][0])        # get bounds of the tick
+                 y1 = round(t[2][1])
+                 cv2.line(overlay, pt1=(x0, y0), pt2=(x1, y1), color=(255,0,0),
+                       thickness=1, lineType=cv2.LINE_AA)
 
-        cv2.imwrite(file1NamePNG, self.image)
+        # dst = src1*alpha + src2*beta + gamma
+        #alpha = 0.6
+        alpha = 1.0             # no alpha on segments and peaks over the original image
+        image = cv2.addWeighted(overlay, alpha, self.image, 1-alpha, 0)
+        cv2.imwrite(file1NamePNG, image)
 
         #print("Saved png file: " + file1NamePNG)
         msgBox = QMessageBox(self)
@@ -1017,41 +1063,51 @@ class MainWindow(QMainWindow):
         msgBox.exec()
 
     #------------------------------------------------------------------
+    def appendSegmentAndPeaks(self, x, y):
+
+        self.segmentNumb +=1
+        segment, = self.ax0.plot([x[0], x[-1]], [y[0], y[-1]], c='b', lw=2, alpha=self.alpha_default, zorder=0,
+                                      label='Segment%02d'%self.segmentNumb)
+        self.segmentList.append(segment)
+        peaksExtracted = self.ax0.scatter(x, y, c='b', marker='o', s=10, zorder=12, alpha=self.alpha_default,
+                                               label='PeaksSegment%02d'%self.segmentNumb)
+        self.peaksExtractedList.append(peaksExtracted)
+
+        # ticks
+        line = LineString([(x[0], y[0]), (x[-1], y[-1])])
+        ticks = self.drawTicks(line, x, y)
+        ticksCollection = LineCollection(ticks, color='b', alpha=self.alpha_default)
+        self.ticksCollectionList.append(ticksCollection)
+        self.ax0.add_collection(ticksCollection)
+
+        dx = x[-1] - x[0]
+        dy = y[-1] - y[0]
+        angle = np.rad2deg(np.arctan2(dy, dx))
+        right = line.parallel_offset(10, 'right')
+        text = self.ax0.text(right.boundary.geoms[1].xy[0][0], right.boundary.geoms[1].xy[1][0], 
+                 'Segment %02d'%self.segmentNumb, ha='left', va='bottom', fontsize=12,
+                 transform_rotates_text=True, rotation=angle, rotation_mode='anchor', clip_on=True,
+                 alpha=self.alpha_default, color='b')
+        self.segmentTextList.append(text)
+
+    #------------------------------------------------------------------
     def extract(self):
         if len(self.indexes) < 2:       # if not at least 2 peaks (cannot draw segment)
             return
 
         xdata = list(self.line_object.get_xdata())
         ydata = list(self.line_object.get_ydata())
-        lineString = LineString([(xdata[0], ydata[0]), (xdata[1], ydata[1])])
+        line = LineString([(xdata[0], ydata[0]), (xdata[1], ydata[1])])
         points = []
         for i in self.indexes:
             point = Point(self.profile_mx[i], self.profile_my[i])
             # Closest point on the line
-            newPoint = lineString.interpolate(lineString.project(point))
+            newPoint = line.interpolate(line.project(point))
             points.append(newPoint)
 
         line = LineString(points)
         x, y = line.xy
-        self.segmentNumb +=1
-        self.segment, = self.ax0.plot([x[0], x[-1]], [y[0], y[-1]], c='b', lw=2, alpha=self.alpha_default, zorder=0,
-                                      label='Segment%02d'%self.segmentNumb)
-        self.segmentList.append(self.segment)
-        self.peaksExtracted = self.ax0.scatter(x, y, c='b', marker='o', alpha=self.alpha_default, s=30, zorder=12,
-                                               label='PeaksSegment%02d'%self.segmentNumb)
-        self.peaksExtractedList.append(self.peaksExtracted)
-
-        dx = x[-1] - x[0]
-        dy = y[-1] - y[0]
-        angle = np.rad2deg(np.arctan2(dy, dx))
-        right = line.parallel_offset(10, 'right')
-        #self.ax0.plot(right.xy[0],right.xy[1], c='g')
-        #text = self.ax0.text(x[0], y[0], 'Segment %02d'%self.segmentNumb, ha='left', va='bottom', fontsize=12,
-        text = self.ax0.text(right.boundary.geoms[1].xy[0][0], right.boundary.geoms[1].xy[1][0], 
-                 'Segment %02d'%self.segmentNumb, ha='left', va='bottom', fontsize=12,
-                 transform_rotates_text=True, rotation=angle, rotation_mode='anchor', clip_on=True,
-                 alpha=self.alpha_default, color='b')
-        self.segmentTextList.append(text)
+        self.appendSegmentAndPeaks(x, y)
 
         self.line_object.remove()
         self.line_object = None
@@ -1084,6 +1140,38 @@ class MainWindow(QMainWindow):
 
         self.buttonDeleteLastSegment.setEnabled(True)
         self.buttonSave.setEnabled(True)
+
+    #------------------------------------------------------------------
+    def load(self):
+
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        CSVFileName, _ = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", 
+                "","CSV Files (*.csv);;", options=options)
+
+        if CSVFileName == "": return
+
+        try:
+            df = pd.read_csv(CSVFileName, skiprows=8)
+
+            for i in df['segment'].unique():
+                x = df[df['segment'] == i]['xPixel'].to_list()
+                y = df[df['segment'] == i]['yPixel'].to_list()
+                self.appendSegmentAndPeaks(x, y)
+
+            self.defineScalePixel() 
+            self.update_peaksExtractedPlot()
+
+            self.buttonSave.setEnabled(True)
+            self.buttonDeleteLastSegment.setEnabled(True)
+
+        except:
+            msgBox = QMessageBox(self)
+            msgBox.setTextFormat(Qt.RichText)
+            msgBox.setText("Problem when reading csv file :<br>" + CSVFileName)
+            msgBox.setWindowTitle("Load message")
+            msgBox.setStandardButtons(QMessageBox.Ok)
+            msgBox.exec()
 
     #------------------------------------------------------------------
     def save(self):
@@ -1133,16 +1221,17 @@ class MainWindow(QMainWindow):
         msgBox.setStandardButtons(QMessageBox.Ok)
         msgBox.exec()
         
-        
     #------------------------------------------------------------------
     def deleteLastSegment(self):
 
         self.segmentList[-1].remove()
         self.segmentTextList[-1].remove()
         self.peaksExtractedList[-1].remove()
+        self.ticksCollectionList[-1].remove()
         self.canvas.draw()
 
         del self.peaksExtractedList[-1]
+        del self.ticksCollectionList[-1]
         del self.segmentList[-1]
         del self.segmentTextList[-1]
         self.segmentNumb -=1
@@ -1152,6 +1241,7 @@ class MainWindow(QMainWindow):
         if len(self.segmentList) == 0:
             self.ax1.set_visible(False)
             self.ax1.clear()
+            self.canvas.draw()
             self.buttonDeleteLastSegment.setEnabled(False)
             self.buttonSave.setEnabled(False)
 
@@ -1178,17 +1268,17 @@ Here are the different steps :
 <li>Pan the image from a mouse click.
 <li>Zoom in or out with wheel zoom (or 2 fingers pad actions).
 <li>Enhance the image from brightness and contrast sliders.
-<li>Create a profile segment by double clicking.
-<li>At the 2nd point, the profile to be extracted is drawn as a red segment. 
+<li>Create a profile segment by double clicking to create control points.
+<li>After the 2nd point created, the profile to be extracted is drawn as a red segment. 
 <li>The segment can be modified (moved, shifted) by pressing the segment itself 
-or its start or end points.
-<li>A profile of the image is drawn corresponding to the profile segment.
+or its start or end control points.
+<li>An intensity profile is extracted from the the image along the profile segment.
 <li>Number of peaks are counted from the smoothed profile.
 <li>Adapt various parameters for peaks detection and profile smoothing. 
-<li>Control the width of the profile segment. 
-<li>Inspect detected peaks with a mouse over from image or profile. 
+<li>Control the width of the profile segment to integrate. 
+<li>Inspect detected peaks with a mouse over from the image or the profile. 
 <li>Define new scale and scale value if needed.
-<li>Extract the peaks.
+<li>Extract the peaks
 <li>Modify the extracted peaks by clicking on peaks :
      <ul>
      <li>right click on segment to add a peak,
@@ -1196,8 +1286,10 @@ or its start or end points.
      </ul>
 <li>Add a new profile segment and repeat the process.
 <li>Extracted peaks are considered from contiguous segments. 
-<li>Save the peaks and stripes in a csv file.
-<li>Capture the image.
+<li>Save the "peaks and stripes" in a csv file.
+<li>Reload a saved "peaks and stripes" csv file.
+<li>Capture the image displayed in the application.
+<li>Save the original image with segments and peaks.
 </ul>
 
 Developped by Patrick Brockmann (LSCE)
