@@ -536,7 +536,7 @@ class MainWindow(QMainWindow):
                     i = ind["ind"][0]
                     pos = peaksExtracted.get_offsets()[i]
                     self.peakExtractedOver0 = self.ax0.scatter(pos[0], pos[1], marker='o', 
-                                                      c='yellow', s=30, zorder=12, alpha=0.8)
+                                                      c='yellow', s=10, zorder=12)
                     pos = self.peaksExtracted1.get_offsets()[i+offset]
                     self.peakExtractedOver1 = self.ax1.scatter(pos[0], pos[1],
                                                       c='yellow', s=200, edgecolors='b', lw=1, alpha=0.8, zorder=0)
@@ -555,7 +555,7 @@ class MainWindow(QMainWindow):
                 peaksExtractedAllList = [sc.get_offsets() for sc in self.peaksExtractedList]  # all peaks as a unique list
                 peaksExtractedAll = np.concatenate(peaksExtractedAllList)    
                 self.peakExtractedOver0 = self.ax0.scatter(peaksExtractedAll[i][0], peaksExtractedAll[i][1], marker='o', 
-                                                  c='yellow', s=30, alpha=0.8, zorder=12)
+                                                  c='yellow', s=10, zorder=12)
                 self.canvas.draw()
 
         #----------------------------------------------
@@ -690,9 +690,18 @@ class MainWindow(QMainWindow):
                    break
 
     #------------------------------------------------------------------
+    def defineScalePixel(self):
+        if self.scaleValue != 0. and self.scaleLength != 0:
+            self.scalePixel = self.scaleValue / self.scaleLength
+        else:
+            self.scalePixel = 1
+
+    #------------------------------------------------------------------
     def drawProfile(self):
         if self.line_object is None:
             return 
+
+        self.defineScalePixel() 
 
         try:
             xdata = list(self.line_object.get_xdata())
@@ -714,8 +723,8 @@ class MainWindow(QMainWindow):
             self.dist_profile = np.linspace(0, self.scalePixel*len(self.profile), num=len(self.profile))
 
             self.ax1.clear()
-            self.ax1.set_visible(True)
             self.ax1.set_facecolor('whitesmoke')
+            self.ax1.set_visible(True)
             
             if self.cboxReverseProfile.isChecked():
             	self.profile = 255 - self.profile
@@ -852,11 +861,6 @@ class MainWindow(QMainWindow):
 
         except:
             self.scaleValue = 0.
-
-        if self.scaleValue != 0. and self.scaleLength != 0:
-            self.scalePixel = self.scaleValue / self.scaleLength
-        else:
-            self.scalePixel = 1
 
     #------------------------------------------------------------------
     def defineScaleValue(self):
@@ -1046,7 +1050,8 @@ class MainWindow(QMainWindow):
                        thickness=1, lineType=cv2.LINE_AA)
 
         # dst = src1*alpha + src2*beta + gamma
-        alpha = 0.6
+        #alpha = 0.6
+        alpha = 1.0             # no alpha on segments and peaks over the original image
         image = cv2.addWeighted(overlay, alpha, self.image, 1-alpha, 0)
         cv2.imwrite(file1NamePNG, image)
 
@@ -1145,6 +1150,8 @@ class MainWindow(QMainWindow):
         CSVFileName, _ = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", 
                 "","CSV Files (*.csv);;", options=options)
 
+        if CSVFileName == "": return
+
         try:
             df = pd.read_csv(CSVFileName, skiprows=8)
 
@@ -1153,6 +1160,7 @@ class MainWindow(QMainWindow):
                 y = df[df['segment'] == i]['yPixel'].to_list()
                 self.appendSegmentAndPeaks(x, y)
 
+            self.defineScalePixel() 
             self.update_peaksExtractedPlot()
 
             self.buttonSave.setEnabled(True)
@@ -1234,6 +1242,7 @@ class MainWindow(QMainWindow):
         if len(self.segmentList) == 0:
             self.ax1.set_visible(False)
             self.ax1.clear()
+            self.canvas.draw()
             self.buttonDeleteLastSegment.setEnabled(False)
             self.buttonSave.setEnabled(False)
 
