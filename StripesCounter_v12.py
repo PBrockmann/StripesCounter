@@ -246,8 +246,8 @@ class MainWindow(QMainWindow):
         layoutV2.addWidget(self.buttonDefineScale)
         layoutV2.addSpacing(20)
         layoutV2.addWidget(self.buttonExtract)
-        layoutV2.addWidget(self.buttonSave)
         layoutV2.addWidget(self.buttonLoad)
+        layoutV2.addWidget(self.buttonSave)
         layoutV2.addSpacing(20)
         layoutV2.addWidget(self.buttonCapture)
         layoutV2.addSpacing(20)
@@ -515,7 +515,7 @@ class MainWindow(QMainWindow):
         cont = False
         if event.inaxes == self.ax0 and self.peaks != None and self.cboxPeaks.isChecked():
             cont, ind = self.peaks.contains(event)
-        elif event.inaxes == self.ax1:
+        elif event.inaxes == self.ax1 and self.peaksCurve != None:
             cont, ind = self.peaksCurve.contains(event)
         if cont and self.peaks != None:
             i = ind["ind"][0]
@@ -780,9 +780,7 @@ class MainWindow(QMainWindow):
             self.cboxReverseProfile.setEnabled(True)
             self.buttonDefineScaleValue.setEnabled(True)
             self.buttonDefineScale.setEnabled(True)
-            self.buttonCapture.setEnabled(True)
             self.buttonExtract.setEnabled(True)
-            self.buttonSaveFullImage.setEnabled(True)
 
             self.canvas.draw()
 
@@ -990,6 +988,8 @@ class MainWindow(QMainWindow):
         self.labelBeta.setEnabled(True)
         self.mySliderBeta.setEnabled(True)
         self.buttonLoad.setEnabled(True)
+        self.buttonCapture.setEnabled(True)
+        self.buttonSaveFullImage.setEnabled(True)
 
         self.canvas.draw()
 
@@ -1023,6 +1023,8 @@ class MainWindow(QMainWindow):
 
         file1NamePNG = file1Name.format("%02d" %self.counterFilename)
 
+        overlay = self.image.copy()
+
         for segment in self.segmentList:
              xdata = list(segment.get_xdata())
              ydata = list(segment.get_ydata())
@@ -1030,7 +1032,7 @@ class MainWindow(QMainWindow):
              y0 = round(ydata[0])
              x1 = round(xdata[1])
              y1 = round(ydata[1])
-             cv2.line(self.image, pt1=(x0, y0), pt2=(x1, y1), color=(255,0,0),
+             cv2.line(overlay, pt1=(x0, y0), pt2=(x1, y1), color=(255,0,0),
                       thickness=1, lineType=cv2.LINE_AA)
 
         for ticksCollection in self.ticksCollectionList:
@@ -1040,10 +1042,13 @@ class MainWindow(QMainWindow):
                  y0 = round(t[0][1])
                  x1 = round(t[2][0])        # get bounds of the tick
                  y1 = round(t[2][1])
-                 cv2.line(self.image, pt1=(x0, y0), pt2=(x1, y1), color=(255,0,0),
+                 cv2.line(overlay, pt1=(x0, y0), pt2=(x1, y1), color=(255,0,0),
                        thickness=1, lineType=cv2.LINE_AA)
 
-        cv2.imwrite(file1NamePNG, self.image)
+        # dst = src1*alpha + src2*beta + gamma
+        alpha = 0.6
+        image = cv2.addWeighted(overlay, alpha, self.image, 1-alpha, 0)
+        cv2.imwrite(file1NamePNG, image)
 
         #print("Saved png file: " + file1NamePNG)
         msgBox = QMessageBox(self)
@@ -1147,7 +1152,11 @@ class MainWindow(QMainWindow):
                 x = df[df['segment'] == i]['xPixel'].to_list()
                 y = df[df['segment'] == i]['yPixel'].to_list()
                 self.appendSegmentAndPeaks(x, y)
+
             self.update_peaksExtractedPlot()
+
+            self.buttonSave.setEnabled(True)
+            self.buttonDeleteLastSegment.setEnabled(True)
 
         except:
             msgBox = QMessageBox(self)
@@ -1251,17 +1260,17 @@ Here are the different steps :
 <li>Pan the image from a mouse click.
 <li>Zoom in or out with wheel zoom (or 2 fingers pad actions).
 <li>Enhance the image from brightness and contrast sliders.
-<li>Create a profile segment by double clicking.
-<li>At the 2nd point, the profile to be extracted is drawn as a red segment. 
+<li>Create a profile segment by double clicking to create control points.
+<li>After the 2nd point created, the profile to be extracted is drawn as a red segment. 
 <li>The segment can be modified (moved, shifted) by pressing the segment itself 
-or its start or end points.
-<li>A profile of the image is drawn corresponding to the profile segment.
+or its start or end control points.
+<li>An intensity profile is extracted from the the image along the profile segment.
 <li>Number of peaks are counted from the smoothed profile.
 <li>Adapt various parameters for peaks detection and profile smoothing. 
-<li>Control the width of the profile segment. 
-<li>Inspect detected peaks with a mouse over from image or profile. 
+<li>Control the width of the profile segment to integrate. 
+<li>Inspect detected peaks with a mouse over from the image or the profile. 
 <li>Define new scale and scale value if needed.
-<li>Extract the peaks.
+<li>Extract the peaks
 <li>Modify the extracted peaks by clicking on peaks :
      <ul>
      <li>right click on segment to add a peak,
@@ -1269,8 +1278,10 @@ or its start or end points.
      </ul>
 <li>Add a new profile segment and repeat the process.
 <li>Extracted peaks are considered from contiguous segments. 
-<li>Save the peaks and stripes in a csv file.
-<li>Capture the image.
+<li>Save the "peaks and stripes" in a csv file.
+<li>Reload a saved "peaks and stripes" csv file.
+<li>Capture the image displayed in the application.
+<li>Save the original image with segments and peaks.
 </ul>
 
 Developped by Patrick Brockmann (LSCE)
