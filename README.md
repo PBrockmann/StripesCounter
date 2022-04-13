@@ -2,7 +2,7 @@
 
 A PyQt Matplotlib python application to detect automatically peaks from
 multiple profile segments, modify extracted peaks and count stripes from 
-microscopic images
+microscopic images.
 
 ![ScreenShot](StripesCounter_v11.5.gif)  
 
@@ -32,6 +32,8 @@ Here are the different steps :
 * Reload a saved "peaks and stripes" csv file.
 * Capture the image displayed in the application.
 * Save the original image with segments and peaks.
+
+<hr>
 
 ## Release notes
 
@@ -98,6 +100,8 @@ v09.1
 v09.0
  * First release with a PyQt interface
 
+<hr>
+
 ## Installation
 
 `$ git clone https://github.com/PBrockmann/StripesCounter`
@@ -112,9 +116,13 @@ Tested with
  * scikit-image=0.19.2
  * shapely=1.8.0
 
+<hr>
+
 ## Contrast and brighness reference 
 
 https://docs.opencv.org/4.5.4/d3/dc1/tutorial_basic_linear_transform.html
+
+<hr>
 
 ## PeakUtils reference
 
