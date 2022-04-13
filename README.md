@@ -17,7 +17,8 @@ Here are the different steps :
 * The segment can be modified (moved, shifted) by pressing the segment itself or its start or end control points.
 * An intensity profile is extracted from the the image along the profile segment.
 * Number of peaks are counted from the smoothed profile.
-* Adapt various parameters for peaks detection and profile smoothing. 
+* Adapt various parameters for peaks detection and profile smoothing.
+* Reverse the profile. 
 * Control the width of the profile segment to integrate. 
 * Inspect detected peaks with a mouse over from the image or the profile. 
 * Define new scale and scale value if needed.
