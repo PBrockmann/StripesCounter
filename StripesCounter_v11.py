@@ -770,7 +770,7 @@ class MainWindow(QMainWindow):
                 self.line3 = "Growth stripe rate (µm/stripe): %.5f" %(1000*stripesDist/(peaksNb-1))
                 self.ax1.set_title(self.line1 + '\n' + self.line2 + '\n' + self.line3, y=-0.55, loc='left', fontsize=10)
             else:
-                self.ax1.set_title(self.line1, y=-0.55, loc='left', fontsize=10)
+                self.ax1.set_title(self.line1 + '\n\n', y=-0.55, loc='left', fontsize=10)
          
             self.ax1.grid(linestyle='dotted')
             self.ax1.axhline(self.peakutils_thres, color="b", lw=1, linestyle='solid', alpha=0.8)
@@ -956,7 +956,7 @@ class MainWindow(QMainWindow):
             self.line3 = "Growth stripe rate (µm/stripe): %.5f" %(1000*lengthPeaks[-1]/(peaksNb-1))
             self.ax1.set_title(self.line1 + '\n' + self.line2 + '\n' + self.line3, y=-0.55, loc='left', fontsize=10)
         else:
-            self.ax1.set_title(self.line1, y=-0.55, loc='left', fontsize=10)
+            self.ax1.set_title(self.line1 + '\n\n', y=-0.55, loc='left', fontsize=10)
         
         self.canvas.draw()
 
