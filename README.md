@@ -38,50 +38,50 @@ Here are the different steps :
 ## Release notes
 
 * v11.50
- * New mode: multiple segments
- * Add/Delete extracted peaks
- * Ticks on segments
- * Export image with segments and peaks
- * Load/save segments and peaks
+  * New mode: multiple segments
+  * Add/Delete extracted peaks
+  * Ticks on segments
+  * Export image with segments and peaks
+  * Load/save segments and peaks
 * v10.93
- * Various fixes
+  * Various fixes
 * v10.82
- * Smaller radius for control points
- * PeakUtils - Threshold with 0.05 increment steps
+  * Smaller radius for control points
+  * PeakUtils - Threshold with 0.05 increment steps
 * v10.81
- * Fix with tesseract v5.0.1
- * Fix error in setting scale value
+  * Fix with tesseract v5.0.1
+  * Fix error in setting scale value
 * v10.8
- * Add profil line width control
+  * Add profil line width control
 * v10.7
- * Increase precision when save files (7 digits)
+  * Increase precision when save files (7 digits)
 * v10.6
- * Inverse image feature
- * Option to open both png and jpeg files
+  * Inverse image feature
+  * Option to open both png and jpeg files
 * v10.5
- * Scale value has now on 3 precision digits
+  * Scale value has now on 3 precision digits
 * v10.4
- * Add extra informations (segment number, parameters) in csv file
+  * Add extra informations (segment number, parameters) in csv file
 * v10.3
- * Highlight peaks when mouse over from image or profil
+  * Highlight peaks when mouse over from image or profil
 * v10.2
- * Display detected peaks on image
+  * Display detected peaks on image
 * v10.1
- * Zoom and drag with mouse
- * Removed matplotlib Toolbar
+  * Zoom and drag with mouse
+  * Removed matplotlib Toolbar
 * v10.0
- * Profil from segmented line 
+  * Profil from segmented line 
 * v09.4
- * Simplify events handling made now on the canvas
+  * Simplify events handling made now on the canvas
 * v09.3
- * Enforce checking errors with scaleValue and scale objects
+  * Enforce checking errors with scaleValue and scale objects
 * v09.2
- * Fix for undefined variables in detectScale
- * drawProfil in a try-except block to prevent errors
+  * Fix for undefined variables in detectScale
+  * drawProfil in a try-except block to prevent errors
 * v09.1
- * Fix for scale value recognition
+  * Fix for scale value recognition
 * v09.0
- * First release with a PyQt interface
+  * First release with a PyQt interface
 
 <hr>
 
