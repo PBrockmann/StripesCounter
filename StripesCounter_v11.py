@@ -41,7 +41,7 @@ except:
     sys.exit()
 
 #======================================================
-version = "v11.51"
+version = "v11.52"
 maximumWidth = 250
 
 #======================================================
@@ -1066,7 +1066,7 @@ class MainWindow(QMainWindow):
     def appendSegmentAndPeaks(self, x, y):
 
         self.segmentNumb +=1
-        segment, = self.ax0.plot([x[0], x[-1]], [y[0], y[-1]], c='b', lw=2, alpha=self.alpha_default, zorder=0,
+        segment, = self.ax0.plot([x[0], x[-1]], [y[0], y[-1]], c='b', lw=2, alpha=self.alpha_default, zorder=10,
                                       label='Segment%02d'%self.segmentNumb)
         self.segmentList.append(segment)
         peaksExtracted = self.ax0.scatter(x, y, c='b', marker='o', s=10, zorder=12, alpha=self.alpha_default,
