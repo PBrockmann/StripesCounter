@@ -41,7 +41,7 @@ except:
     sys.exit()
 
 #======================================================
-version = "v11.50"
+version = "v11.52"
 maximumWidth = 250
 
 #======================================================
@@ -767,10 +767,10 @@ class MainWindow(QMainWindow):
                 stripesDist = self.dist_profile[self.indexes[-1]]-self.dist_profile[self.indexes[0]]
                 self.line2 = "Length of stripes: %.5f  (first: %.5f, last: %.5f)" \
                                 %(stripesDist, self.dist_profile[self.indexes[0]], self.dist_profile[self.indexes[-1]])
-                self.line3 = "Growth stripe rate (µm/stripe): %.5f" %(1000*stripesDist/(peaksNb-1))
+                self.line3 = "Growth stripe rate (unit/stripe): %.5f" %(stripesDist/(peaksNb-1))
                 self.ax1.set_title(self.line1 + '\n' + self.line2 + '\n' + self.line3, y=-0.55, loc='left', fontsize=10)
             else:
-                self.ax1.set_title(self.line1, y=-0.55, loc='left', fontsize=10)
+                self.ax1.set_title(self.line1 + '\n\n', y=-0.55, loc='left', fontsize=10)
          
             self.ax1.grid(linestyle='dotted')
             self.ax1.axhline(self.peakutils_thres, color="b", lw=1, linestyle='solid', alpha=0.8)
@@ -953,10 +953,10 @@ class MainWindow(QMainWindow):
         self.line1 = "Number of peaks: %3d" %(peaksNb)
         if peaksNb > 1:
             self.line2 = "Total length: %.5f"%(lengthPeaks[-1] )
-            self.line3 = "Growth stripe rate (µm/stripe): %.5f" %(1000*lengthPeaks[-1]/(peaksNb-1))
+            self.line3 = "Growth stripe rate (unit/stripe): %.5f" %(lengthPeaks[-1]/(peaksNb-1))
             self.ax1.set_title(self.line1 + '\n' + self.line2 + '\n' + self.line3, y=-0.55, loc='left', fontsize=10)
         else:
-            self.ax1.set_title(self.line1, y=-0.55, loc='left', fontsize=10)
+            self.ax1.set_title(self.line1 + '\n\n', y=-0.55, loc='left', fontsize=10)
         
         self.canvas.draw()
 
@@ -1066,7 +1066,7 @@ class MainWindow(QMainWindow):
     def appendSegmentAndPeaks(self, x, y):
 
         self.segmentNumb +=1
-        segment, = self.ax0.plot([x[0], x[-1]], [y[0], y[-1]], c='b', lw=2, alpha=self.alpha_default, zorder=0,
+        segment, = self.ax0.plot([x[0], x[-1]], [y[0], y[-1]], c='b', lw=2, alpha=self.alpha_default, zorder=10,
                                       label='Segment%02d'%self.segmentNumb)
         self.segmentList.append(segment)
         peaksExtracted = self.ax0.scatter(x, y, c='b', marker='o', s=10, zorder=12, alpha=self.alpha_default,
