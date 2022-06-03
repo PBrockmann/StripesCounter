@@ -184,6 +184,10 @@ class MainWindow(QMainWindow):
         self.buttonDefineScaleValue.setMaximumWidth(maximumWidth)
         self.buttonDefineScaleValue.clicked.connect(self.defineScaleValue)
 
+        self.buttonDefineScaleLength = QPushButton('Define scale length')
+        self.buttonDefineScaleLength.setMaximumWidth(maximumWidth)
+        self.buttonDefineScaleLength.clicked.connect(self.defineScaleLength)
+
         self.buttonDefineScale = QPushButton('Define scale')
         self.buttonDefineScale.setMaximumWidth(maximumWidth)
         self.buttonDefineScale.clicked.connect(self.defineScale)
@@ -242,6 +246,7 @@ class MainWindow(QMainWindow):
         layoutV2.addWidget(self.cboxReverseProfile)
         layoutV2.addSpacing(1)
         layoutV2.addWidget(self.buttonDefineScaleValue)
+        layoutV2.addWidget(self.buttonDefineScaleLength)
         layoutV2.addWidget(self.buttonDefineScale)
         layoutV2.addSpacing(20)
         layoutV2.addWidget(self.buttonExtract)
@@ -315,7 +320,7 @@ class MainWindow(QMainWindow):
 
         self.line1 = self.line2 = self.line3 = None
         self.counterFilename = 1
-        
+
         self.radius = 25
 
     #------------------------------------------------------------------
@@ -340,6 +345,7 @@ class MainWindow(QMainWindow):
         self.cboxReverseProfile.setChecked(False)
         self.buttonDefineScale.setEnabled(False)
         self.buttonDefineScaleValue.setEnabled(False)
+        self.buttonDefineScaleLength.setEnabled(False)
         self.buttonCapture.setEnabled(False)
         self.buttonExtract.setEnabled(False)
         self.buttonSave.setEnabled(False)
@@ -418,31 +424,31 @@ class MainWindow(QMainWindow):
 
     #------------------------------------------------------------------
     def zoom(self, event):
-        axes = event.inaxes
-        # https://stackoverflow.com/questions/11551049/matplotlib-plot-zooming-with-scroll-wheel
-        scale_zoom = 1.2
-        cur_xlim = axes.get_xlim()
-        cur_ylim = axes.get_ylim()
-        xdata = event.xdata # get event x location
-        ydata = event.ydata # get event y location
-        if event.button == 'up':
-            # deal with zoom in
-            scale_factor = 1 / scale_zoom
-        elif event.button == 'down':
-            # deal with zoom out
-            scale_factor = scale_zoom
-        else:
-            # deal with something that should never happen
-            scale_factor = 1
-            #print(event.button)
-        new_width = (cur_xlim[1] - cur_xlim[0]) * scale_factor
-        new_height = (cur_ylim[1] - cur_ylim[0]) * scale_factor
-        relx = (cur_xlim[1] - xdata)/(cur_xlim[1] - cur_xlim[0])
-        rely = (cur_ylim[1] - ydata)/(cur_ylim[1] - cur_ylim[0])
-        axes.set_xlim([xdata - new_width * (1-relx), xdata + new_width * (relx)])
-        axes.set_ylim([ydata - new_height * (1-rely), ydata + new_height * (rely)])
+        if event.inaxes == self.ax0:              # to zoom and pan in ax[0]
+            # https://stackoverflow.com/questions/11551049/matplotlib-plot-zooming-with-scroll-wheel
+            scale_zoom = 1.2
+            cur_xlim = self.ax0.get_xlim()
+            cur_ylim = self.ax0.get_ylim()
+            xdata = event.xdata # get event x location
+            ydata = event.ydata # get event y location
+            if event.button == 'up':
+                # deal with zoom in
+                scale_factor = 1 / scale_zoom
+            elif event.button == 'down':
+                # deal with zoom out
+                scale_factor = scale_zoom
+            else:
+                # deal with something that should never happen
+                scale_factor = 1
+                #print(event.button)
+            new_width = (cur_xlim[1] - cur_xlim[0]) * scale_factor
+            new_height = (cur_ylim[1] - cur_ylim[0]) * scale_factor
+            relx = (cur_xlim[1] - xdata)/(cur_xlim[1] - cur_xlim[0])
+            rely = (cur_ylim[1] - ydata)/(cur_ylim[1] - cur_ylim[0])
+            self.ax0.set_xlim([xdata - new_width * (1-relx), xdata + new_width * (relx)])
+            self.ax0.set_ylim([ydata - new_height * (1-rely), ydata + new_height * (rely)])
 
-        self.canvas.draw()
+            self.canvas.draw()
 
     #------------------------------------------------------------------
     def on_release(self, event):
@@ -592,14 +598,13 @@ class MainWindow(QMainWindow):
             self.update_lineWithWidth()
             self.canvas.draw()
             self.drawProfile()
-        else :
-            axes = event.inaxes
+        elif event.inaxes == self.ax0:              # to zoom and pan in ax[0]
             dx = event.xdata - self.xpress
             dy = event.ydata - self.ypress
             self.cur_xlim -= dx
             self.cur_ylim -= dy
-            axes.set_xlim(self.cur_xlim)
-            axes.set_ylim(self.cur_ylim)
+            self.ax0.set_xlim(self.cur_xlim)
+            self.ax0.set_ylim(self.cur_ylim)
             self.canvas.draw()
 
     #------------------------------------------------------------------
@@ -611,11 +616,11 @@ class MainWindow(QMainWindow):
             self.mousepress = "right"
         elif event.button == 1:
             self.mousepress = "left"
-        axes = event.inaxes
-        self.cur_xlim = axes.get_xlim()
-        self.cur_ylim = axes.get_ylim()
-        self.xpress = event.xdata
-        self.ypress = event.ydata
+        if event.inaxes == self.ax0:              # to zoom and pan in ax[0]
+            self.cur_xlim = self.ax0.get_xlim()
+            self.cur_ylim = self.ax0.get_ylim()
+            self.xpress = event.xdata
+            self.ypress = event.ydata
         if event and event.dblclick:
             if len(self.listLabelPoints) < 2:
                 self.n = self.n+1
@@ -788,6 +793,7 @@ class MainWindow(QMainWindow):
             self.cboxPeaks.setEnabled(True)
             self.cboxReverseProfile.setEnabled(True)
             self.buttonDefineScaleValue.setEnabled(True)
+            self.buttonDefineScaleLength.setEnabled(True)
             self.buttonDefineScale.setEnabled(True)
             self.buttonExtract.setEnabled(True)
 
@@ -864,8 +870,6 @@ class MainWindow(QMainWindow):
 
     #------------------------------------------------------------------
     def defineScaleValue(self):
-        #value, okPressed = QInputDialog.getDouble(self, "Get scale value","Value:", self.scaleValue, 0, 100, 1)
-        # --> get comma instead of dot
         dialog = QInputDialog()
         dialog.setInputMode(QInputDialog.DoubleInput)
         dialog.setLocale(QLocale(QLocale.English, QLocale.UnitedStates))
@@ -881,6 +885,35 @@ class MainWindow(QMainWindow):
             self.scaleValue = dialog.doubleValue()
         else:
             return
+
+        self.ax0.set_title(os.path.basename(self.imageFileName) + '\n'
+            + "          Scale length [pixels]: %s" %(self.scaleLength) + '\n'
+            + "          Scale value [mm]: %.3f" %(self.scaleValue),
+            loc='left', fontsize=10)
+        self.scaleValue_object.set_text("   %.3f mm" %(self.scaleValue))
+        self.drawProfile()
+
+    #------------------------------------------------------------------
+    def defineScaleLength(self):
+        dialog = QInputDialog()
+        dialog.setInputMode(QInputDialog.DoubleInput)
+        dialog.setLocale(QLocale(QLocale.English, QLocale.UnitedStates))
+        dialog.setLabelText("Length: ")
+        dialog.setDoubleMinimum(0)
+        dialog.setDoubleMaximum(10000)
+        dialog.setIntStep(1)
+        dialog.setDoubleDecimals(0)
+        dialog.setDoubleValue(self.scaleLength)
+        dialog.setWindowTitle("Get scale length")
+        okPressed = dialog.exec_()
+        if okPressed:
+            self.scaleLength = dialog.doubleValue()
+        else:
+            return
+
+        if self.scale_object != None:
+            self.scale_object.remove()
+            self.scale_object = None
 
         self.ax0.set_title(os.path.basename(self.imageFileName) + '\n'
             + "          Scale length [pixels]: %s" %(self.scaleLength) + '\n'
@@ -1089,10 +1122,10 @@ class MainWindow(QMainWindow):
         self.ticksCollectionList.append(ticksCollection)
         self.ax0.add_collection(ticksCollection)
 
-        dx = x[-1] - x[0]
-        dy = y[-1] - y[0]
-        angle = np.rad2deg(np.arctan2(dy, dx))
-        right = line.parallel_offset(10, 'right')
+        #dx = x[-1] - x[0]
+        #dy = y[-1] - y[0]
+        #angle = np.rad2deg(np.arctan2(dy, dx))
+        #right = line.parallel_offset(10, 'right')
         #text = self.ax0.text(right.boundary.geoms[1].xy[0][0], right.boundary.geoms[1].xy[1][0], 
         #         'S%02d'%self.segmentNumb, ha='left', va='bottom', fontsize=12,
         #         transform_rotates_text=True, rotation=angle, rotation_mode='anchor', clip_on=True,
@@ -1149,6 +1182,7 @@ class MainWindow(QMainWindow):
         self.cboxPeaks.setEnabled(False)
         self.cboxReverseProfile.setEnabled(False)
         self.buttonDefineScaleValue.setEnabled(False)
+        self.buttonDefineScaleLength.setEnabled(False)
         self.buttonDefineScale.setEnabled(False)
 
         self.buttonDeleteLastSegment.setEnabled(True)
@@ -1165,13 +1199,26 @@ class MainWindow(QMainWindow):
 
         try:
             df = pd.read_csv(CSVFileName, skiprows=8)
+       
+            # Read header to get scaleValue and scaleLength
+            df1 = pd.read_csv(CSVFileName, header=None, skiprows=5, nrows=1)
+            self.scaleValue = float(df1[0].values[0].split(':')[1])
+            df1 = pd.read_csv(CSVFileName, header=None, skiprows=6, nrows=1)
+            self.scaleLength = int(float(df1[0].values[0].split(':')[1]))
+            print(self.scaleValue, self.scaleLength)
+            self.defineScalePixel() 
+
+            self.ax0.set_title(os.path.basename(self.imageFileName) + '\n'
+                + "          Scale length [pixels]: %s" %(self.scaleLength) + '\n'
+                + "          Scale value [mm]: %.3f" %(self.scaleValue),
+                loc='left', fontsize=10)
+            self.scaleValue_object.set_text("   %.3f mm" %(self.scaleValue))
 
             for i in df['segment'].unique():
                 x = df[df['segment'] == i]['xPixel'].to_list()
                 y = df[df['segment'] == i]['yPixel'].to_list()
                 self.appendSegmentAndPeaks(x, y)
 
-            self.defineScalePixel() 
             self.update_peaksExtractedPlot()
 
             self.buttonSave.setEnabled(True)
@@ -1207,11 +1254,9 @@ class MainWindow(QMainWindow):
         file1.write("# Date: " + date + "\n")
         file1.write("# File: %s\n" %(base))
         file1.write("# Number of segments: %d\n"%(self.segmentNumb))
-        file1.write("# Detected scale value (mm): %.3f\n" %(self.scaleValue))
-        file1.write("# Detected scale length in pixel: %d\n" %(self.scaleLength))
+        file1.write("# Scale value [mm]: %.3f\n" %(self.scaleValue))
+        file1.write("# Scale length [pixels]: %d\n" %(self.scaleLength))
         file1.write("#================================================\n")
-
-        print(self.scale_object.get_xydata())
 
         file1.write("n,xPixel,yPixel,segment,peakNumbInSegment,distanceInSegment,distanceCumulated,stripeLength\n")
         n = 1
