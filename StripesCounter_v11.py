@@ -1205,7 +1205,6 @@ class MainWindow(QMainWindow):
             self.scaleValue = float(df1[0].values[0].split(':')[1])
             df1 = pd.read_csv(CSVFileName, header=None, skiprows=6, nrows=1)
             self.scaleLength = int(float(df1[0].values[0].split(':')[1]))
-            print(self.scaleValue, self.scaleLength)
             self.defineScalePixel() 
 
             if self.scale_object != None:
