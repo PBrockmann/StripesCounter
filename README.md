@@ -40,6 +40,7 @@ Here are the different steps :
 * v11.60
   * Load scale length from save CSV file
   * New annotations for segments
+  * Export annotations for segments in exported image
   * Fix dialog titles
 * v11.50
   * New mode: multiple segments
