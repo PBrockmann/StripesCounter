@@ -1,7 +1,7 @@
 
 
 #=================================================================
-# Author: Patrick Brockmann CEA/DRF/LSCE - April 2022
+# Author: Patrick Brockmann CEA/DRF/LSCE - May 2022
 #=================================================================
 
 import sys, os
@@ -41,7 +41,7 @@ except:
     sys.exit()
 
 #======================================================
-version = "v11.52"
+version = "v11.60"
 maximumWidth = 250
 
 #======================================================
@@ -184,6 +184,10 @@ class MainWindow(QMainWindow):
         self.buttonDefineScaleValue.setMaximumWidth(maximumWidth)
         self.buttonDefineScaleValue.clicked.connect(self.defineScaleValue)
 
+        self.buttonDefineScaleLength = QPushButton('Define scale length')
+        self.buttonDefineScaleLength.setMaximumWidth(maximumWidth)
+        self.buttonDefineScaleLength.clicked.connect(self.defineScaleLength)
+
         self.buttonDefineScale = QPushButton('Define scale')
         self.buttonDefineScale.setMaximumWidth(maximumWidth)
         self.buttonDefineScale.clicked.connect(self.defineScale)
@@ -242,6 +246,7 @@ class MainWindow(QMainWindow):
         layoutV2.addWidget(self.cboxReverseProfile)
         layoutV2.addSpacing(1)
         layoutV2.addWidget(self.buttonDefineScaleValue)
+        layoutV2.addWidget(self.buttonDefineScaleLength)
         layoutV2.addWidget(self.buttonDefineScale)
         layoutV2.addSpacing(20)
         layoutV2.addWidget(self.buttonExtract)
@@ -340,6 +345,7 @@ class MainWindow(QMainWindow):
         self.cboxReverseProfile.setChecked(False)
         self.buttonDefineScale.setEnabled(False)
         self.buttonDefineScaleValue.setEnabled(False)
+        self.buttonDefineScaleLength.setEnabled(False)
         self.buttonCapture.setEnabled(False)
         self.buttonExtract.setEnabled(False)
         self.buttonSave.setEnabled(False)
@@ -787,6 +793,7 @@ class MainWindow(QMainWindow):
             self.cboxPeaks.setEnabled(True)
             self.cboxReverseProfile.setEnabled(True)
             self.buttonDefineScaleValue.setEnabled(True)
+            self.buttonDefineScaleLength.setEnabled(True)
             self.buttonDefineScale.setEnabled(True)
             self.buttonExtract.setEnabled(True)
 
@@ -831,7 +838,7 @@ class MainWindow(QMainWindow):
             #print("Detected scale length in pixel: ", scaleLength)
 
             if self.scaleLength > 0:
-                self.scale_object = self.ax0.plot([point1Scale[0], point2Scale[0]],
+                self.scale_object, = self.ax0.plot([point1Scale[0], point2Scale[0]],
                                                     [point1Scale[1], point2Scale[1]],
                                                     alpha=1.0, c='purple', lw=2)
         except:
@@ -863,8 +870,6 @@ class MainWindow(QMainWindow):
 
     #------------------------------------------------------------------
     def defineScaleValue(self):
-        #value, okPressed = QInputDialog.getDouble(self, "Get scale value","Value:", self.scaleValue, 0, 100, 1)
-        # --> get comma instead of dot
         dialog = QInputDialog()
         dialog.setInputMode(QInputDialog.DoubleInput)
         dialog.setLocale(QLocale(QLocale.English, QLocale.UnitedStates))
@@ -889,6 +894,35 @@ class MainWindow(QMainWindow):
         self.drawProfile()
 
     #------------------------------------------------------------------
+    def defineScaleLength(self):
+        dialog = QInputDialog()
+        dialog.setInputMode(QInputDialog.DoubleInput)
+        dialog.setLocale(QLocale(QLocale.English, QLocale.UnitedStates))
+        dialog.setLabelText("Length: ")
+        dialog.setDoubleMinimum(0)
+        dialog.setDoubleMaximum(10000)
+        dialog.setIntStep(1)
+        dialog.setDoubleDecimals(0)
+        dialog.setDoubleValue(self.scaleLength)
+        dialog.setWindowTitle("Get scale length")
+        okPressed = dialog.exec_()
+        if okPressed:
+            self.scaleLength = dialog.doubleValue()
+        else:
+            return
+
+        if self.scale_object != None:
+            self.scale_object.remove()
+            self.scale_object = None
+
+        self.ax0.set_title(os.path.basename(self.imageFileName) + '\n'
+            + "          Scale length [pixels]: %s" %(self.scaleLength) + '\n'
+            + "          Scale value [mm]: %.3f" %(self.scaleValue),
+            loc='left', fontsize=10)
+        self.scaleValue_object.set_text("   %.3f mm" %(self.scaleValue))
+        self.drawProfile()
+
+    #------------------------------------------------------------------
     def defineScale(self):
         xdata = self.line_object.get_xdata()
         ydata = self.line_object.get_ydata()
@@ -900,11 +934,11 @@ class MainWindow(QMainWindow):
             + "          Scale value [mm]: %.3f" %(self.scaleValue),
             loc='left', fontsize=10)
         if self.scale_object == None:
-            self.scale_object = self.ax0.plot([point1Scale[0], point2Scale[0]], 
+            self.scale_object, = self.ax0.plot([point1Scale[0], point2Scale[0]], 
                                                 [point1Scale[1], point2Scale[1]],
                                                 alpha=1.0, c='purple', lw=2)
         else:
-            self.scale_object[0].set_data([point1Scale[0], point2Scale[0]],
+            self.scale_object.set_data([point1Scale[0], point2Scale[0]],
                                           [point1Scale[1], point2Scale[1]])
         self.scaleValue_object.set_position((point1Scale[0], point1Scale[1]))
         self.drawProfile()
@@ -941,6 +975,7 @@ class MainWindow(QMainWindow):
                 lengthPeaks.append(lengthPeaks[-1])     # segments are contiguous
 
             self.ax1.axvline(x=lengthPeaks[-1], linestyle='dashed', color='gray', alpha=0.8)
+            self.ax1.text(lengthPeaks[-1], -3, 'S%02d'%(n+1), clip_on=True, alpha=0.8, color='b')
             for i in range(0, len(posPeaks)-1):
                 distance = Point(posPeaks[i]).distance(Point(posPeaks[i+1])) * self.scalePixel
                 lengthPeaks.append(lengthPeaks[-1] + distance)
@@ -1002,20 +1037,18 @@ class MainWindow(QMainWindow):
         file1Name = os.path.splitext(base)[0] + "_StripesCounterFile_capture_{}.png"
         while os.path.isfile(file1Name.format("%02d" %self.counterFilename)):
             self.counterFilename += 1
-
         file1NamePNG = file1Name.format("%02d" %self.counterFilename)
+
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        file1NamePNG, _ = QFileDialog.getSaveFileName(self, "Capture displayed image",
+                file1NamePNG, "PNG Files (*.png)", options=options)
 
         bbox = self.ax0.get_tightbbox(self.fig.canvas.get_renderer())
         bbox = Bbox([[0.0, 2.6], [8.2, 7.6]])
         plt.savefig(file1NamePNG, bbox_inches=bbox)
 
         #print("Saved png file: " + file1NamePNG)
-        msgBox = QMessageBox(self)
-        msgBox.setTextFormat(Qt.RichText)
-        msgBox.setText("Saved png file :<br>" + file1NamePNG)
-        msgBox.setWindowTitle("Capture message")
-        msgBox.setStandardButtons(QMessageBox.Ok)
-        msgBox.exec()
         
     #------------------------------------------------------------------
     def saveFullImage(self):
@@ -1023,12 +1056,19 @@ class MainWindow(QMainWindow):
         file1Name = os.path.splitext(base)[0] + "_StripesCounterFile_image_{}.png"
         while os.path.isfile(file1Name.format("%02d" %self.counterFilename)):
             self.counterFilename += 1
-
         file1NamePNG = file1Name.format("%02d" %self.counterFilename)
+
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        file1NamePNG, _ = QFileDialog.getSaveFileName(self, "Save image with segments and peaks",
+                file1NamePNG, "PNG Files (*.png)", options=options)
 
         overlay = self.image.copy()
 
-        for segment in self.segmentList:
+        fontFace = cv2.FONT_HERSHEY_SIMPLEX
+        fontSize = 1
+        fontThickness = 1
+        for n,segment in enumerate(self.segmentList):
              xdata = list(segment.get_xdata())
              ydata = list(segment.get_ydata())
              x0 = round(xdata[0])
@@ -1037,6 +1077,11 @@ class MainWindow(QMainWindow):
              y1 = round(ydata[1])
              cv2.line(overlay, pt1=(x0, y0), pt2=(x1, y1), color=(255,0,0),
                       thickness=1, lineType=cv2.LINE_AA)
+             text = 'S%02d'%(n+1)
+             textsize = cv2.getTextSize(text, fontFace, fontSize, fontThickness)[0]
+             offset = (-1 if (y1-y0 >= 0) else 1)*20
+             cv2.putText(overlay, text, (round(x0 - textsize[0]/2) , round(y0 + textsize[1]/2) + offset), 
+                    fontFace, fontSize, (255, 0, 0), fontThickness, cv2.LINE_AA) 
 
         for ticksCollection in self.ticksCollectionList:
              ticks = ticksCollection.get_segments()
@@ -1045,7 +1090,11 @@ class MainWindow(QMainWindow):
                  y0 = round(t[0][1])
                  x1 = round(t[2][0])        # get bounds of the tick
                  y1 = round(t[2][1])
-                 cv2.line(overlay, pt1=(x0, y0), pt2=(x1, y1), color=(255,0,0),
+                 if n == 0 or n == len(ticks)-1:
+                     color = (255,255,0)
+                 else:
+                     color = (255,0,0)
+                 cv2.line(overlay, pt1=(x0, y0), pt2=(x1, y1), color=color,
                        thickness=1, lineType=cv2.LINE_AA)
 
         # dst = src1*alpha + src2*beta + gamma
@@ -1055,16 +1104,9 @@ class MainWindow(QMainWindow):
         cv2.imwrite(file1NamePNG, image)
 
         #print("Saved png file: " + file1NamePNG)
-        msgBox = QMessageBox(self)
-        msgBox.setTextFormat(Qt.RichText)
-        msgBox.setText("Saved png file :<br>" + file1NamePNG)
-        msgBox.setWindowTitle("Capture message")
-        msgBox.setStandardButtons(QMessageBox.Ok)
-        msgBox.exec()
 
     #------------------------------------------------------------------
     def appendSegmentAndPeaks(self, x, y):
-
         self.segmentNumb +=1
         segment, = self.ax0.plot([x[0], x[-1]], [y[0], y[-1]], c='b', lw=2, alpha=self.alpha_default, zorder=10,
                                       label='Segment%02d'%self.segmentNumb)
@@ -1080,14 +1122,18 @@ class MainWindow(QMainWindow):
         self.ticksCollectionList.append(ticksCollection)
         self.ax0.add_collection(ticksCollection)
 
-        dx = x[-1] - x[0]
-        dy = y[-1] - y[0]
-        angle = np.rad2deg(np.arctan2(dy, dx))
-        right = line.parallel_offset(10, 'right')
-        text = self.ax0.text(right.boundary.geoms[1].xy[0][0], right.boundary.geoms[1].xy[1][0], 
-                 'Segment %02d'%self.segmentNumb, ha='left', va='bottom', fontsize=12,
-                 transform_rotates_text=True, rotation=angle, rotation_mode='anchor', clip_on=True,
-                 alpha=self.alpha_default, color='b')
+        #dx = x[-1] - x[0]
+        #dy = y[-1] - y[0]
+        #angle = np.rad2deg(np.arctan2(dy, dx))
+        #right = line.parallel_offset(10, 'right')
+        #text = self.ax0.text(right.boundary.geoms[1].xy[0][0], right.boundary.geoms[1].xy[1][0], 
+        #         'S%02d'%self.segmentNumb, ha='left', va='bottom', fontsize=12,
+        #         transform_rotates_text=True, rotation=angle, rotation_mode='anchor', clip_on=True,
+        #         alpha=self.alpha_default, color='b')
+        offset = (-1 if (y[-1]-y[0] >= 0) else 1)*20
+        text = self.ax0.text(x[0], y[0] + offset, 
+                 'S%02d'%self.segmentNumb, ha='center', va='center', fontsize=12,
+                 clip_on=True, alpha=self.alpha_default, color='b')
         self.segmentTextList.append(text)
 
     #------------------------------------------------------------------
@@ -1136,6 +1182,7 @@ class MainWindow(QMainWindow):
         self.cboxPeaks.setEnabled(False)
         self.cboxReverseProfile.setEnabled(False)
         self.buttonDefineScaleValue.setEnabled(False)
+        self.buttonDefineScaleLength.setEnabled(False)
         self.buttonDefineScale.setEnabled(False)
 
         self.buttonDeleteLastSegment.setEnabled(True)
@@ -1143,23 +1190,39 @@ class MainWindow(QMainWindow):
 
     #------------------------------------------------------------------
     def load(self):
-
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
-        CSVFileName, _ = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", 
+        CSVFileName, _ = QFileDialog.getOpenFileName(self, "Load segments and peaks", 
                 "","CSV Files (*.csv);;", options=options)
 
         if CSVFileName == "": return
 
         try:
             df = pd.read_csv(CSVFileName, skiprows=8)
+       
+            # Read header to get scaleValue and scaleLength
+            df1 = pd.read_csv(CSVFileName, header=None, skiprows=5, nrows=1)
+            self.scaleValue = float(df1[0].values[0].split(':')[1])
+            df1 = pd.read_csv(CSVFileName, header=None, skiprows=6, nrows=1)
+            self.scaleLength = int(float(df1[0].values[0].split(':')[1]))
+            print(self.scaleValue, self.scaleLength)
+            self.defineScalePixel() 
+
+            if self.scale_object != None:
+                self.scale_object.remove()
+                self.scale_object = None
+
+            self.ax0.set_title(os.path.basename(self.imageFileName) + '\n'
+                + "          Scale length [pixels]: %s" %(self.scaleLength) + '\n'
+                + "          Scale value [mm]: %.3f" %(self.scaleValue),
+                loc='left', fontsize=10)
+            self.scaleValue_object.set_text("   %.3f mm" %(self.scaleValue))
 
             for i in df['segment'].unique():
                 x = df[df['segment'] == i]['xPixel'].to_list()
                 y = df[df['segment'] == i]['yPixel'].to_list()
                 self.appendSegmentAndPeaks(x, y)
 
-            self.defineScalePixel() 
             self.update_peaksExtractedPlot()
 
             self.buttonSave.setEnabled(True)
@@ -1181,6 +1244,12 @@ class MainWindow(QMainWindow):
             self.counterFilename += 1
         file1NameCSV = file1Name.format("%02d" %self.counterFilename)
 
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        file1NameCSV, _ = QFileDialog.getSaveFileName(self, "Save segments and peaks",
+                file1NameCSV, "CSV Files (*.csv)", options=options)
+
+        overlay = self.image.copy()
         date = datetime.datetime.now().strftime("%Y/%m/%d at %X")
 
         file1 = open(file1NameCSV, "w")
@@ -1189,8 +1258,8 @@ class MainWindow(QMainWindow):
         file1.write("# Date: " + date + "\n")
         file1.write("# File: %s\n" %(base))
         file1.write("# Number of segments: %d\n"%(self.segmentNumb))
-        file1.write("# Detected scale value (mm): %.3f\n" %(self.scaleValue))
-        file1.write("# Detected scale length in pixel: %d\n" %(self.scaleLength))
+        file1.write("# Scale value [mm]: %.3f\n" %(self.scaleValue))
+        file1.write("# Scale length [pixels]: %d\n" %(self.scaleLength))
         file1.write("#================================================\n")
 
         file1.write("n,xPixel,yPixel,segment,peakNumbInSegment,distanceInSegment,distanceCumulated,stripeLength\n")
@@ -1214,16 +1283,9 @@ class MainWindow(QMainWindow):
         file1.close()
 
         #print("Saved csv file: " + file1NameCSV)
-        msgBox = QMessageBox(self)
-        msgBox.setTextFormat(Qt.RichText)
-        msgBox.setText("Saved csv file :<br>" + file1NameCSV)
-        msgBox.setWindowTitle("Save message")
-        msgBox.setStandardButtons(QMessageBox.Ok)
-        msgBox.exec()
         
     #------------------------------------------------------------------
     def deleteLastSegment(self):
-
         self.segmentList[-1].remove()
         self.segmentTextList[-1].remove()
         self.peaksExtractedList[-1].remove()
@@ -1249,7 +1311,7 @@ class MainWindow(QMainWindow):
     def openFileNameDialog(self):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
-        self.imageFileName, _ = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", 
+        self.imageFileName, _ = QFileDialog.getOpenFileName(self, "Load image", 
                 "","PNG, JPG, TIF Files (*.png *.jpg *.tif);;PNG Files (*.png);;JPG Files (*.jpg);;TIF Files (*.tif);;All Files (*)", options=options)
         if self.imageFileName:
             self.displayImage()
