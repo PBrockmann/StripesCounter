@@ -4,7 +4,7 @@ A PyQt Matplotlib python application to detect automatically peaks from
 multiple profile segments, modify extracted peaks and count stripes from 
 microscopic images.
 
-![ScreenShot](StripesCounter_v11.5.gif)  
+![ScreenShot](StripesCounter_v11.6.gif)  
 
 Here are the different steps :
 
@@ -37,6 +37,10 @@ Here are the different steps :
 
 ## Release notes
 
+* v11.60
+  * Load scale length from save CSV file
+  * New annotations for segments
+  * Fix dialog titles
 * v11.50
   * New mode: multiple segments
   * Add/Delete extracted peaks
