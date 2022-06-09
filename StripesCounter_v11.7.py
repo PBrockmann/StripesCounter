@@ -35,13 +35,15 @@ try:
     import datetime
     import pandas as pd
 
+    import cairo
+
 except:
     print("Some modules have not been found:")
     print("---> re, matplotlib, PyQt5, skimage, peakutils, numpy, cv2, shapely")
     sys.exit()
 
 #======================================================
-version = "v11.60"
+version = "v11.70"
 maximumWidth = 250
 
 #======================================================
@@ -214,7 +216,7 @@ class MainWindow(QMainWindow):
 
         self.buttonSaveFullImage = QPushButton('Save image with segments and peaks')
         self.buttonSaveFullImage.setMaximumWidth(maximumWidth)
-        self.buttonSaveFullImage.clicked.connect(self.saveFullImage)
+        self.buttonSaveFullImage.clicked.connect(self.saveFullImageSVG)
 
         layoutH = QHBoxLayout()
 
@@ -1051,7 +1053,7 @@ class MainWindow(QMainWindow):
         #print("Saved png file: " + file1NamePNG)
         
     #------------------------------------------------------------------
-    def saveFullImage(self):
+    def saveFullImagePNG(self):
         base=os.path.basename(self.imageFileName)
         file1Name = os.path.splitext(base)[0] + "_StripesCounterFile_image_{}.png"
         while os.path.isfile(file1Name.format("%02d" %self.counterFilename)):
@@ -1103,7 +1105,57 @@ class MainWindow(QMainWindow):
         image = cv2.addWeighted(overlay, alpha, self.image, 1-alpha, 0)
         cv2.imwrite(file1NamePNG, image)
 
-        #print("Saved png file: " + file1NamePNG)
+    #------------------------------------------------------------------
+    def saveFullImageSVG(self):
+        base=os.path.basename(self.imageFileName)
+        file1Name = os.path.splitext(base)[0] + "_StripesCounterFile_image_{}.svg"
+        while os.path.isfile(file1Name.format("%02d" %self.counterFilename)):
+            self.counterFilename += 1
+        file1NameSVG = file1Name.format("%02d" %self.counterFilename)
+
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        file1NameSVG, _ = QFileDialog.getSaveFileName(self, "Save image with segments and peaks",
+                file1NameSVG, "SVG Files (*.svg)", options=options)
+
+        with cairo.SVGSurface(file1NameSVG, self.image.shape[1], self.image.shape[0]) as surface:
+             context = cairo.Context(surface)
+             context.set_line_width(2)
+             context.set_source_rgba(0, 0, 1, 1)
+             context.set_font_size(14)
+             context.select_font_face("Arial", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
+             for n,segment in enumerate(self.segmentList):
+                  xdata = list(segment.get_xdata())
+                  ydata = list(segment.get_ydata())
+                  x0 = xdata[0]
+                  y0 = ydata[0]
+                  x1 = xdata[1]
+                  y1 = ydata[1]
+                  context.move_to(x0, y0)
+                  context.line_to(x1, y1)
+                  text = 'S%02d'%(n+1)
+                  x_bearing, y_bearing, width, height, x_advance, y_advance = context.text_extents(text)
+                  offset = (-1 if (y1-y0 >= 0) else 1)*20
+                  context.move_to(x0 - (width/2 + x_bearing) , y0 - (height/2 + y_bearing) + offset) 
+                  context.show_text(text)
+                  context.stroke()
+
+             for ticksCollection in self.ticksCollectionList:
+                  ticks = ticksCollection.get_segments()
+                  for n,t in enumerate(ticks):
+                      x0 = t[0][0]
+                      y0 = t[0][1]
+                      x1 = t[2][0]        # get bounds of the tick
+                      y1 = t[2][1]
+                      if n == 0 or n == len(ticks)-1:
+                          context.set_source_rgba(0, 1, 1, 1)
+                      else:
+                          context.set_source_rgba(0, 0, 1, 1)
+                      context.move_to(x0, y0)
+                      context.line_to(x1, y1)
+                      context.stroke()
+
+        print("Saved svg file: " + file1NameSVG)
 
     #------------------------------------------------------------------
     def appendSegmentAndPeaks(self, x, y):
