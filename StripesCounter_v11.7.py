@@ -1045,6 +1045,7 @@ class MainWindow(QMainWindow):
         options |= QFileDialog.DontUseNativeDialog
         file1NamePNG, _ = QFileDialog.getSaveFileName(self, "Capture displayed image",
                 file1NamePNG, "PNG Files (*.png)", options=options)
+        if file1NamePNG == "": return
 
         bbox = self.ax0.get_tightbbox(self.fig.canvas.get_renderer())
         bbox = Bbox([[0.0, 2.6], [8.2, 7.6]])
@@ -1064,6 +1065,7 @@ class MainWindow(QMainWindow):
         options |= QFileDialog.DontUseNativeDialog
         file1NamePNG, _ = QFileDialog.getSaveFileName(self, "Save image with segments and peaks",
                 file1NamePNG, "PNG Files (*.png)", options=options)
+        if file1NamePNG == "": return
 
         overlay = self.image.copy()
 
@@ -1117,6 +1119,7 @@ class MainWindow(QMainWindow):
         options |= QFileDialog.DontUseNativeDialog
         file1NameSVG, _ = QFileDialog.getSaveFileName(self, "Save image with segments and peaks",
                 file1NameSVG, "SVG Files (*.svg)", options=options)
+        if file1NameSVG == "": return
 
         with cairo.SVGSurface(file1NameSVG, self.image.shape[1], self.image.shape[0]) as surface:
              context = cairo.Context(surface)
@@ -1244,18 +1247,17 @@ class MainWindow(QMainWindow):
     def load(self):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
-        CSVFileName, _ = QFileDialog.getOpenFileName(self, "Load segments and peaks", 
+        File1NameCSV, _ = QFileDialog.getOpenFileName(self, "Load segments and peaks", 
                 "","CSV Files (*.csv);;", options=options)
-
-        if CSVFileName == "": return
+        if File1NameCSV == "": return
 
         try:
-            df = pd.read_csv(CSVFileName, skiprows=8)
+            df = pd.read_csv(File1NameCSV, skiprows=8)
        
             # Read header to get scaleValue and scaleLength
-            df1 = pd.read_csv(CSVFileName, header=None, skiprows=5, nrows=1)
+            df1 = pd.read_csv(File1NameCSV, header=None, skiprows=5, nrows=1)
             self.scaleValue = float(df1[0].values[0].split(':')[1])
-            df1 = pd.read_csv(CSVFileName, header=None, skiprows=6, nrows=1)
+            df1 = pd.read_csv(File1NameCSV, header=None, skiprows=6, nrows=1)
             self.scaleLength = int(float(df1[0].values[0].split(':')[1]))
             self.defineScalePixel() 
 
@@ -1282,7 +1284,7 @@ class MainWindow(QMainWindow):
         except:
             msgBox = QMessageBox(self)
             msgBox.setTextFormat(Qt.RichText)
-            msgBox.setText("Problem when reading csv file :<br>" + CSVFileName)
+            msgBox.setText("Problem when reading csv file :<br>" + File1NameCSV)
             msgBox.setWindowTitle("Load message")
             msgBox.setStandardButtons(QMessageBox.Ok)
             msgBox.exec()
@@ -1299,6 +1301,7 @@ class MainWindow(QMainWindow):
         options |= QFileDialog.DontUseNativeDialog
         file1NameCSV, _ = QFileDialog.getSaveFileName(self, "Save segments and peaks",
                 file1NameCSV, "CSV Files (*.csv)", options=options)
+        if File1NameCSV == "": return
 
         overlay = self.image.copy()
         date = datetime.datetime.now().strftime("%Y/%m/%d at %X")
