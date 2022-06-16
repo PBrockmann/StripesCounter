@@ -1301,7 +1301,7 @@ class MainWindow(QMainWindow):
         options |= QFileDialog.DontUseNativeDialog
         file1NameCSV, _ = QFileDialog.getSaveFileName(self, "Save segments and peaks",
                 file1NameCSV, "CSV Files (*.csv)", options=options)
-        if File1NameCSV == "": return
+        if file1NameCSV == "": return
 
         overlay = self.image.copy()
         date = datetime.datetime.now().strftime("%Y/%m/%d at %X")
