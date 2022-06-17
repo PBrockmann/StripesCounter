@@ -36,14 +36,15 @@ try:
     import pandas as pd
 
     import cairo
+    import xml.dom.minidom
 
 except:
     print("Some modules have not been found:")
-    print("---> re, matplotlib, PyQt5, skimage, peakutils, numpy, cv2, shapely")
+    print("---> re, matplotlib, PyQt5, skimage, peakutils, numpy, cv2, shapely, cairo, xml")
     sys.exit()
 
 #======================================================
-version = "v11.60"
+version = "v11.70"
 maximumWidth = 250
 
 #======================================================
@@ -216,7 +217,7 @@ class MainWindow(QMainWindow):
 
         self.buttonSaveFullImage = QPushButton('Save image with segments and peaks')
         self.buttonSaveFullImage.setMaximumWidth(maximumWidth)
-        self.buttonSaveFullImage.clicked.connect(self.saveFullImagePNG)
+        self.buttonSaveFullImage.clicked.connect(self.saveFullImageSVG)
 
         layoutH = QHBoxLayout()
 
@@ -1123,7 +1124,7 @@ class MainWindow(QMainWindow):
 
         with cairo.SVGSurface(file1NameSVG, self.image.shape[1], self.image.shape[0]) as surface:
              context = cairo.Context(surface)
-             context.set_line_width(2)
+             context.set_line_width(1)
              context.set_source_rgba(0, 0, 1, 1)
              context.set_font_size(14)
              context.select_font_face("Arial", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
@@ -1158,7 +1159,21 @@ class MainWindow(QMainWindow):
                       context.line_to(x1, y1)
                       context.stroke()
 
-        print("Saved svg file: " + file1NameSVG)
+        #------- add image xml tag to svg file
+        dom = xml.dom.minidom.parse(file1NameSVG)
+        imageElement = dom.createElement("image")
+        imageElement.setAttribute("xlink:href", self.imageFileName)
+        imageElement.setAttribute("x", "0")
+        imageElement.setAttribute("y", "0")
+        imageElement.setAttribute("width", str(self.image.shape[1]))
+        imageElement.setAttribute("height", str(self.image.shape[0]))
+        node = dom.getElementsByTagName("defs")[0]
+        node.parentNode.insertBefore(imageElement, node)
+        newline = dom.createTextNode('\n')
+        node.parentNode.insertBefore(newline, node)
+        dom.writexml(open(file1NameSVG, 'w+'))
+
+        #print("Saved svg file: " + file1NameSVG)
 
     #------------------------------------------------------------------
     def appendSegmentAndPeaks(self, x, y):
