@@ -37,6 +37,8 @@ Here are the different steps :
 
 ## Release notes
 
+* v11.70
+  * Save in SVG not anymore PNG
 * v11.60
   * Load scale length from save CSV file
   * New annotations for segments
