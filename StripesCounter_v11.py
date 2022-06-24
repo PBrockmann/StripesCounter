@@ -44,7 +44,7 @@ except:
     sys.exit()
 
 #======================================================
-version = "v11.80"
+version = "v11.81"
 maximumWidth = 250
 
 #======================================================
@@ -1007,8 +1007,16 @@ class MainWindow(QMainWindow):
                 lengthPeaks.append(lengthPeaks[-1] + distance)
             self.ax1.axvline(x=lengthPeaks[-1], linestyle='dashed', color='gray', alpha=0.8)
 
-        self.ax1.plot(lengthPeaks, [0]*len(lengthPeaks), marker='o', c='b', alpha=self.alpha_default, markersize=5)
-        self.peaksExtracted1 = self.ax1.scatter(lengthPeaks, [0]*len(lengthPeaks), marker='o', c='b', alpha=self.alpha_default, s=5)
+        # small offset between segments to distinguish start and end of segments
+        #self.ax1.plot(lengthPeaks, [0]*len(lengthPeaks), marker='o', c='b', alpha=self.alpha_default, markersize=5)
+        #self.peaksExtracted1 = self.ax1.scatter(lengthPeaks, [0]*len(lengthPeaks), marker='o', c='b', alpha=self.alpha_default, s=5)
+        yposPeaks = []
+        for n, peaksExtracted in enumerate(self.peaksExtractedList):
+            posPeaks = peaksExtracted.get_offsets()
+            for i in range(0, len(posPeaks)):
+                yposPeaks.append((n%2)*0.2) 
+        self.ax1.plot(lengthPeaks, yposPeaks, marker='o', c='b', alpha=self.alpha_default, markersize=5)
+        self.peaksExtracted1 = self.ax1.scatter(lengthPeaks, yposPeaks, marker='o', c='b', alpha=self.alpha_default, s=5)
 
         peaksNb = len(lengthPeaks)
         self.line1 = "Number of peaks: %3d" %(peaksNb)
