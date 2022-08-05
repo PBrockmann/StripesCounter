@@ -1200,7 +1200,6 @@ class MainWindow(QMainWindow):
         imageElement.setAttribute("y", "0")
         imageElement.setAttribute("width", str(self.image.shape[1]))
         imageElement.setAttribute("height", str(self.image.shape[0]))
-        print(imageElement)
         node = dom.getElementsByTagName("defs")[0]
         node.parentNode.insertBefore(imageElement, node)
         newline = dom.createTextNode('\n')
