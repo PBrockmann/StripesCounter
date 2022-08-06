@@ -44,7 +44,7 @@ except:
     sys.exit()
 
 #======================================================
-version = "v11.81"
+version = "v11.82"
 maximumWidth = 250
 
 #======================================================
@@ -1193,9 +1193,7 @@ class MainWindow(QMainWindow):
         #------- add image xml tag to svg file
         dom = xml.dom.minidom.parse(file1NameSVG)
         imageElement = dom.createElement("image")
-        # https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/xlink:href
-        imageElement.setAttribute("xlink:href", self.imageFileName)
-        #imageElement.setAttribute("href", self.imageFileName)
+        imageElement.setAttribute("xlink:href", "file:///" + self.imageFileName)
         imageElement.setAttribute("x", "0")
         imageElement.setAttribute("y", "0")
         imageElement.setAttribute("width", str(self.image.shape[1]))
