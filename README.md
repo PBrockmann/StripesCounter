@@ -105,6 +105,7 @@ Here are the different steps :
 #### Create a python environment to use StripesCounter 
 
  * conda create --name env_for_StripesCounter
+ * conda env list
  * conda activate env_for_StripesCounter
  * conda install python
  * pip install -r requirements.txt
