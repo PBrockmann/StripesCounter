@@ -39,6 +39,18 @@ except:
     print("Detected scale value: not possible")
 
 #------------------------------------------------------------------
+fld = cv2.ximgproc.createFastLineDetector()
+lines = fld.detect(mask)
+scaleLength = 0
+for line in lines:
+    point1 = np.array((line[0][0],line[0][1]))
+    point2 = np.array((line[0][2],line[0][3]))
+    length = np.linalg.norm(point1 - point2)
+    #print(point1, point2, dist)
+    if (length > scaleLength):
+        scaleLength = int(length) 
+print("Detected scale length in pixel: ", scaleLength)
+
 try:
     fld = cv2.ximgproc.createFastLineDetector()
     lines = fld.detect(mask)

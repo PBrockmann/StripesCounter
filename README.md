@@ -37,6 +37,7 @@ Here are the different steps :
 
 ## Release notes
 
+* v11.82
 * v11.80
   * Zoom on profile panel
   * Profile control points now created by a double click and pressing Shift key
@@ -97,19 +98,21 @@ Here are the different steps :
 
 ## Installation
 
-`$ git clone https://github.com/PBrockmann/StripesCounter`
+#### Get the application
+ * git clone https://github.com/PBrockmann/StripesCounter
+ * cd StripesCounter
 
-Tested with :
- * matplotlib=3.5.1
- * opencv-contrib-python=4.5.5.64
- * peakutils=1.3.3
- * PyQt5=5.15.6
- * pytesseract=0.3.9
- * python=3.9.10
- * scikit-image=0.19.2
- * shapely=1.8.0
+#### Create a python environment to use StripesCounter 
 
-<hr>
+ * conda create --name env_for_StripesCounter
+ * conda activate env_for_StripesCounter
+ * conda install python
+ * pip install -r requirements.txt
+
+#### Test
+ * python test_imports.py
+ * python ./detect_scale.py BEL17-2-2_1.35x_haut0001.png
+ * python StripesCounter_v11.py
 
 ## Contrast and brighness reference 
 
