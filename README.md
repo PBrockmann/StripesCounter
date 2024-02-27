@@ -38,6 +38,7 @@ Here are the different steps :
 ## Release notes
 
 * v11.82
+  * Orthogonal ticks
 * v11.80
   * Zoom on profile panel
   * Profile control points now created by a double click and pressing Shift key
