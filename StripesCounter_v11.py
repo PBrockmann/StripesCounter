@@ -823,8 +823,7 @@ class MainWindow(QMainWindow):
     #------------------------------------------------------------------
     def drawTicks(self, line, x, y, length=5):
         left = line.parallel_offset(length, 'left')
-        right0 = line.parallel_offset(length, 'right')
-        right = LineString([right0.boundary.geoms[1], right0.boundary.geoms[0]]) # flip because 'right' orientation
+        right = line.parallel_offset(length, 'right')
         ticks = []
         for i in range(len(x)):
             p = Point(x[i],y[i])
