@@ -126,6 +126,6 @@ https://docs.opencv.org/4.5.4/d3/dc1/tutorial_basic_linear_transform.html
 
 https://peakutils.readthedocs.io/en/latest/reference.html#module-peakutils.peak
 
-* thres (float between [0., 1.]) – Normalized threshold. Only the peaks with amplitude higher than the threshold will be detected.
-* min_dist (int) – Minimum distance between each detected peak. The peak with the highest amplitude is preferred to satisfy this constraint.
-* thres_abs (boolean) – If True, the thres value will be interpreted as an absolute value, instead of a normalized threshold.
+* `thres (float between [0., 1.])` – Normalized threshold. Only the peaks with amplitude higher than the threshold will be detected.
+* `min_dist (int)` – Minimum distance between each detected peak. The peak with the highest amplitude is preferred to satisfy this constraint.
+* `thres_abs (boolean)` – If True, the thres value will be interpreted as an absolute value, instead of a normalized threshold.
