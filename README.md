@@ -100,21 +100,21 @@ Here are the different steps :
 ## Installation
 
 #### Get the application
- * git clone https://github.com/PBrockmann/StripesCounter
- * cd StripesCounter
+ * `git clone https://github.com/PBrockmann/StripesCounter`
+ * `cd StripesCounter`
 
 #### Create a python environment to use StripesCounter 
 
  * `conda create --name env_for_StripesCounter`
- * conda env list
- * conda activate env_for_StripesCounter
- * conda install python
- * pip install -r requirements.txt
+ * `conda env list`
+ * `conda activate env_for_StripesCounter`
+ * `conda install python`
+ * `pip install -r requirements.txt`
 
 #### Test
- * python test_imports.py
- * python ./detect_scale.py BEL17-2-2_1.35x_haut0001.png
- * python StripesCounter_v11.py
+ * `python test_imports.py`
+ * `python detect_scale.py BEL17-2-2_1.35x_haut0001.png`
+ * `python StripesCounter_v11.py`
 
 ## Contrast and brighness reference 
 
