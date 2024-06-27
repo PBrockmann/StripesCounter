@@ -1172,7 +1172,7 @@ class MainWindow(QMainWindow):
         if file1NamePNG == "": return
 
         bbox = self.ax0.get_tightbbox(self.fig.canvas.get_renderer())
-        bbox = Bbox([[0.0, 2.6], [8.2, 7.6]])
+        bbox = Bbox([[0.0, 2.5], [11.0, 8.5]])
         plt.savefig(file1NamePNG, bbox_inches=bbox)
 
         #print("Saved png file: " + file1NamePNG)
