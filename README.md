@@ -37,6 +37,9 @@ Here are the different steps :
 
 ## Release notes
 
+* v12.30
+  * Subsampling to read large images (25000x25000)
+  * Remove automatic scale
 * v11.82
   * Orthogonal ticks
 * v11.80
