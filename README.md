@@ -1,9 +1,22 @@
 # StripesCounter
 
-A PyQt Matplotlib python application to detect automatically peaks from
-multiple profile segments, modify extracted peaks and count stripes from 
-microscopic images.
+A PyQt Matplotlib python application to detect automatically peaks from multiple profile segments, edit by suppressing or adding extracted peaks and count width stripes from microscopic images.
 
+## The StripesCounter application
+
+### Purpose
+We developed this software to address a specific need that existing market solutions either do not meet or are not well-suited for. The chosen strategy was to create an ad-hoc software tailored precisely to these requirements. The approach is relatively straightforward, featuring two main stages. The first stage involves peaks detection, where the software identifies peaks based on an image intensity profile selected by the user, with various customizable criteria such as smoothing kernel or integration width along the profile. The second stage is an editing phase, allowing users to add or delete these automatically positioned peaks from the previous step, providing maximum flexibility and precision.
+
+![Capture 01: StripesCounter with automatic peaks detection phase](capture_01.png)  
+
+The application has a very specific scope of use. It does not offer complex image processing algorithms, only basic adjustments such as contrast, brightness, and inversion. For more advanced processing, you will need to use dedicated image processing software in a preliminary phase. Similarly, once the peaks are edited and validated by the user, their positions, scales, and distances between each peak can be saved in a spreadsheet file (CSV format), ready to be processed in a subsequent phase.
+
+![Capture 02: StripesCounter with 12 segments of edited and validated peaks](capture_02.png)  
+
+### Installation procedure
+The application is available from a GitHub repository and consists of a python Matplotlib-based application with a PyQt interface. It is designed to run in a Conda environment, with the installation process facilitated by a requirements.txt file to ease the creation of a dedicated environment. The necessary packages to be installed include PyQt5, scikit-image, opencv-python, opencv-contrib-python, opencv-python-headless, shapely, pycairo, matplotlib, peakutils, and pandas.
+
+### Installation procedure
 ![ScreenShot](StripesCounter_v11.80.gif)  
 
 Here are the different steps :
@@ -35,7 +48,7 @@ Here are the different steps :
 
 <hr>
 
-## Release notes
+#### Release notes
 
 * v12.30
   * Subsampling to read large images (25000x25000)
@@ -100,13 +113,13 @@ Here are the different steps :
 
 <hr>
 
-## Installation
+#### Installation
 
-#### Get the application
+##### Get the application
  * `git clone https://github.com/PBrockmann/StripesCounter`
  * `cd StripesCounter`
 
-#### Create a python environment to use StripesCounter 
+##### Create a python environment to use StripesCounter 
 
  * `conda create --name env_for_StripesCounter`
  * `conda env list`
@@ -114,18 +127,18 @@ Here are the different steps :
  * `conda install python`
  * `pip install -r requirements.txt`
 
-#### Test
+##### Test
  * `python test_imports.py`
  * `python detect_scale.py BEL17-2-2_1.35x_haut0001.png`
  * `python StripesCounter_v11.py`
 
-## Contrast and brighness reference 
+#### Contrast and brighness reference 
 
 https://docs.opencv.org/4.5.4/d3/dc1/tutorial_basic_linear_transform.html
 
 <hr>
 
-## PeakUtils reference
+#### PeakUtils reference
 
 https://peakutils.readthedocs.io/en/latest/reference.html#module-peakutils.peak
 
