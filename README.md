@@ -14,11 +14,13 @@ The application has a very specific scope of use. It does not offer complex imag
 ![Capture 02: StripesCounter with 12 segments of edited and validated peaks](capture_02.png)  
 
 ### Installation procedure
-The application is available from a GitHub repository and consists of a python Matplotlib-based application with a PyQt interface. It is designed to run in a Conda environment, with the installation process facilitated by a requirements.txt file to ease the creation of a dedicated environment. The necessary packages to be installed include PyQt5, scikit-image, opencv-python, opencv-contrib-python, opencv-python-headless, shapely, pycairo, matplotlib, peakutils, and pandas.
+The application is available from a GitHub repository and consists of a python Matplotlib-based application with a PyQt interface. It is designed to run in a Conda environment, with the installation process facilitated by a requirements.txt file to ease the creation of a dedicated environment. The necessary packages to be installed include PyQt5, scikit-image, opencv-python, opencv-contrib-python, opencv-python-headless, shapely, pycairo, matplotlib, peakutils, and pandas. 
+See instructions bellow for details.
 
-### Installation procedure
+### Demonstation 
 ![ScreenShot](StripesCounter_v11.80.gif)  
 
+### Usage
 Here are the different steps :
 
 * Open an image, optionnaly with a scale and value scale annotation.
