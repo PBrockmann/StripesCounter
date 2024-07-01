@@ -1,6 +1,6 @@
 # StripesCounter
 
-A PyQt Matplotlib python application to detect automatically peaks from multiple profile segments, edit by suppressing or adding extracted peaks and count width stripes from microscopic images.
+A PyQt Matplotlib python application to detect automatically peaks from multiple profile segments drawn on high resolutuon microscopic images, edit by suppressing or adding extracted peaks, count stripes and measure their widths.
 
 ## The StripesCounter application
 
