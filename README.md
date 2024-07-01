@@ -6,7 +6,7 @@ A PyQt Matplotlib python application to detect automatically peaks from multiple
 
 ### Purpose
 We developed this software to address a specific need that existing market solutions either do not meet or are not well-suited for. The chosen strategy was to create an ad-hoc software tailored precisely to these requirements. The approach is relatively straightforward, featuring two main stages. The first stage involves peaks detection, where the software identifies peaks based on an image intensity profile selected by the user, with various customizable criteria such as smoothing kernel or integration width along the profile. The second stage is an editing phase, allowing users to add or delete these automatically positioned peaks from the previous step, providing maximum flexibility and precision.
-The application has been designed to work seamlessly with large images (25000x25000) recorded from microscopes using progressive subsampling technology.
+The application has been designed to work seamlessly with high resolution images (25000x25000) recorded from microscopes using progressive subsampling technology.
 
 ![Capture 01: StripesCounter with automatic peaks detection phase](capture_01.png)  
 
